@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto mt-8">
+    <h1 class="text-3xl font-bold mb-6">Welcome to GuideHub</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="p-6 bg-white rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-4">For Tourists</h2>
+            <p class="mb-4">Find unique tours and local experiences.</p>
+            <a href="{% url 'login' %}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded">
+                Start Exploring
+            </a>
+        </div>
+        
+        <div class="p-6 bg-white rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-4">For Guides</h2>
+            <p class="mb-4">Share your expertise and host tours.</p>
+            <a href="{% url 'login' %}" class="inline-block bg-green-500 text-white px-4 py-2 rounded">
+                Start Hosting
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
