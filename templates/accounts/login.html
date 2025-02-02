@@ -1,15 +1,52 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container mx-auto mt-8 max-w-md">
-    <h2 class="text-2xl font-bold mb-6">Login</h2>
-    <form method="post" class="space-y-4">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Login</button>
-    </form>
-    <p class="mt-4">
-        Don't have an account? <a href="{% url 'select_user_type' %}" class="text-blue-500">Register here</a>
-    </p>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}">
+
+<body>
+<div class="main-container">
+    <!-- Image on the Right Side -->
+    <div class="image-section"></div>
+
+    <!-- Login Form -->
+    <div class="form-section">
+        <div class="form-content">
+            <h2>Sign In</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="styled-form">
+                    {{ form.username.label_tag }}
+                    {{ form.username }}
+                    <p class="password-container">
+                        {{ form.password.label_tag }}
+                        {{ form.password }}
+                        <span class="toggle-password" onclick="togglePassword()">👁️</span>
+                    </p>
+                </div>
+                <div class="remember-forgot">
+                    <label><input type="checkbox" name="remember"> Remember</label>
+                    <a href="#">Forgot password?</a>
+                </div>
+                <button type="submit" class="btn">Sign In</button>
+            </form>
+            <div class="register">
+                <p>Don't have an account? <a href="{% url 'select_user_type' %}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Register</a></p>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+function togglePassword() {
+    let passwordInput = document.querySelector('.password-container input');
+    let type = passwordInput.type === 'password' ? 'text' : 'password';
+    passwordInput.type = type;
+}
+</script>
+
+</body>
 {% endblock %}

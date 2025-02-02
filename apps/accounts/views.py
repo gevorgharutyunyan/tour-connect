@@ -3,10 +3,11 @@ from django.views import View
 from django.contrib.auth import login
 from django.contrib import messages
 from django.contrib.auth.views import LoginView
-from .forms import UserTypeForm, TouristRegistrationForm, GuideRegistrationForm
+from .forms import UserTypeForm, TouristRegistrationForm, GuideRegistrationForm, CustomLoginForm
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
+    form_class = CustomLoginForm
     redirect_authenticated_user = True
 
 

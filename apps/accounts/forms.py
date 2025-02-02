@@ -1,19 +1,22 @@
 # apps/accounts/forms.py
 from django import forms
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.forms import UserCreationForm
+
 from .models import User
 
 
+class CustomLoginForm(AuthenticationForm):
+    username = forms.CharField(
+        label="Email address",  # Change the displayed label
+        # widget=forms.EmailInput(attrs={'autofocus': True})  # Change input type to email
+    )
+
+
 class UserTypeForm(forms.Form):
-    USER_TYPES = (
-        ('tourist', 'I am a Tourist'),
-        ('guide', 'I am a Guide'),
-    )
-    user_type = forms.ChoiceField(
-        choices=USER_TYPES,
-        widget=forms.RadioSelect,
-        label="What type of account would you like to create?"
-    )
+    USER_TYPES = (('tourist', 'I am a Tourist'), ('guide', 'I am a Guide'),)
+    user_type = forms.ChoiceField(choices=USER_TYPES, widget=forms.RadioSelect,
+        label="What type of account would you like to create?")
 
 
 class TouristRegistrationForm(UserCreationForm):
@@ -24,8 +27,7 @@ class TouristRegistrationForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'first_name', 'last_name',
-                  'phone_number', 'password1', 'password2')
+        fields = ('email', 'username', 'first_name', 'last_name', 'phone_number', 'password1', 'password2')
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -47,10 +49,9 @@ class GuideRegistrationForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'first_name', 'last_name',
-                  'phone_number', 'guide_license_number',
-                  'years_of_experience', 'verification_documents',
-                  'password1', 'password2')
+        fields = (
+        'email', 'username', 'first_name', 'last_name', 'phone_number', 'guide_license_number', 'years_of_experience',
+        'verification_documents', 'password1', 'password2')
 
     def save(self, commit=True):
         user = super().save(commit=False)

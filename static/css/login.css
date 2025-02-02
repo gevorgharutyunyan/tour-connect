@@ -1,0 +1,163 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+}
+
+.main-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    background: white;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    display: flex;
+    width: 80vw; /* Reduce overall container width */
+    height: 80vh;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.image-section {
+    width: 50%; /* Reduced width */
+    height: 70%; /* Prevents it from touching top/bottom */
+    background: url("/static/images/login_page.png") center/cover no-repeat;
+    margin-right: 3rem; /* Moves it slightly towards the middle */
+    margin-bottom: 1rem;
+    margin-left: 5rem;
+}
+
+.form-section {
+    width: 40%;  /* Smaller form area */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    margin-left: 30px;
+}
+
+.form-content {
+    width: 80%; /* Smaller input area */
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 60px;
+    font-size: 24px;
+}
+
+.styled-form p {
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.styled-form input {
+    width: 80%;
+    height: 40px;
+    padding: 10px;
+    border: 2px  #ccc;
+    border-radius: 3px;
+    background-color: #f5f5f5;
+    margin-bottom: 15px;
+}
+
+/* Password Field with Icon */
+.password-container {
+    position: relative;
+}
+
+.password-container input {
+    width: 100%;
+    padding-right: 40px;
+}
+
+.password-container .toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #666;
+}
+
+/* Remember Me & Forgot Password */
+.remember-forgot {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    margin-bottom: 15px;
+
+}
+
+.remember-forgot a {
+    text-decoration: none;
+    color: #c00;
+    font-weight: bold;
+}
+
+.remember-forgot label{
+    text-decoration: none;
+    color: darkgray;
+}
+
+/* Sign In Button */
+.btn {
+    background: #c00;
+    color: white;
+    padding: 15px;
+    border: none;
+    width: 100%;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Register */
+.register {
+    text-align: center;
+    margin-top: 45px;
+
+}
+
+.register a {
+    color: #c00;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* Responsive for Smaller Screens */
+@media (max-width: 200px) {
+    .main-container {
+        flex-direction: column-reverse;
+    }
+
+    .image-section {
+        width: 100%;
+        height: 250px;
+    }
+
+    .form-section {
+        width: 100%;
+    }
+
+    .form-content {
+        width: 90%;
+    }
+}
