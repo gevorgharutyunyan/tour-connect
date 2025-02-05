@@ -8,7 +8,7 @@
         <div class="p-6 bg-white rounded-lg shadow">
             <h2 class="text-xl font-bold mb-4">For Tourists</h2>
             <p class="mb-4">Find unique tours and local experiences.</p>
-            <a href="{% url 'login' %}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded">
+            <a href="{% url 'accounts:login' %}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded">
                 Start Exploring
             </a>
         </div>
@@ -16,10 +16,12 @@
         <div class="p-6 bg-white rounded-lg shadow">
             <h2 class="text-xl font-bold mb-4">For Guides</h2>
             <p class="mb-4">Share your expertise and host tours.</p>
-            <a href="{% url 'login' %}" class="inline-block bg-green-500 text-white px-4 py-2 rounded">
+            <a href="{% url 'accounts:login' %}" class="inline-block bg-green-500 text-white px-4 py-2 rounded">
                 Start Hosting
             </a>
         </div>
+        <a href="{% url 'accounts:logout' %}">Logout</a>
+        <a href="{% url 'accounts:profile' %}">Profile</a>
     </div>
 </div>
 {% endblock %}
