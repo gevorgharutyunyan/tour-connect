@@ -25,7 +25,7 @@ class TouristRegistrationForm(UserCreationForm):
         user.email = self.cleaned_data['email']
         if commit:
             user.save()
-            Profile.objects.create(user=user)  # Create profile after saving user
+          # Create profile after saving user
         return user
 
 class GuideRegistrationForm(UserCreationForm):
@@ -43,15 +43,57 @@ class GuideRegistrationForm(UserCreationForm):
         user.email = self.cleaned_data['email']
         if commit:
             user.save()
-            Profile.objects.create(user=user)  # Create profile after saving user
         return user
 
-class TouristProfileForm(forms.ModelForm):
-    class Meta:
-        model = Profile
-        fields = ['phone_number']  # Add more fields if needed
 
-class GuideProfileForm(forms.ModelForm):
+class BaseProfileForm(forms.ModelForm):
+    """Base form for shared profile fields"""
+
     class Meta:
         model = Profile
-        fields = ['phone_number', 'guide_license_number', 'years_of_experience', 'verification_documents']
+        fields = [
+            'phone_number',
+            'bio',
+            'profile_picture',
+            'date_of_birth',
+            'country',
+        ]
+        widgets = {
+            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
+            'bio': forms.Textarea(attrs={'rows': 4}),
+        }
+
+    def clean_phone_number(self):
+        phone = self.cleaned_data.get('phone_number')
+        if phone:
+            # Remove any non-digit characters
+            phone = ''.join(filter(str.isdigit, phone))
+            if len(phone) < 10:
+                raise forms.ValidationError("Phone number must be at least 10 digits")
+        return phone
+
+
+class TouristProfileForm(BaseProfileForm):
+    class Meta(BaseProfileForm.Meta):
+        fields = BaseProfileForm.Meta.fields + ['preferences']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['preferences'].widget = forms.CheckboxSelectMultiple()
+
+
+class GuideProfileForm(BaseProfileForm):
+    class Meta(BaseProfileForm.Meta):
+        fields = BaseProfileForm.Meta.fields + [
+            'guide_license_number',
+            'years_of_experience',
+            'verification_documents',
+            'languages'
+        ]
+
+    def clean_verification_documents(self):
+        docs = self.cleaned_data.get('verification_documents')
+        if docs:
+            if docs.size > 5 * 1024 * 1024:  # 5MB limit
+                raise forms.ValidationError("File size must be under 5MB")
+        return docs
