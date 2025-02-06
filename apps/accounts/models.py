@@ -47,9 +47,6 @@ class Profile(models.Model):
     guide_license_number = models.CharField(max_length=50, blank=True)
     years_of_experience = models.PositiveIntegerField(null=True, blank=True)
 
-    # Tourist-specific fields
-    preferences = models.ManyToManyField('tours.TourCategory', blank=True)
-
     def __str__(self):
         return f"Profile of {self.user.username}"
 

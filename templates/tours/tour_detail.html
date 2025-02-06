@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>{{ tour.title }}</h2>
+    <p>{{ tour.description }}</p>
+    <p><strong>Guide:</strong> {{ tour.guide }}</p>
+    <p><strong>Location:</strong> {{ tour.location }}</p>
+    <p><strong>Price:</strong> ${{ tour.price }}</p>
+    <p><strong>Max Participants:</strong> {{ tour.max_participants }}</p>
+
+    {% if user == tour.guide %}
+        <a href="{% url 'tours:tour-edit' tour.id %}">Edit</a>
+        <a href="{% url 'tours:tour-delete' tour.id %}">Delete</a>
+    {% endif %}
+{% endblock %}

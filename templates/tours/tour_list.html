@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Available Tours</h2>
+    {% for tour in tours %}
+        <div>
+            <h3><a href="{% url 'tours:tour-detail' tour.id %}">{{ tour.title }}</a></h3>
+            <p>{{ tour.description|truncatewords:20 }}</p>
+            <p>Location: {{ tour.location }}</p>
+            <p>Price: ${{ tour.price }}</p>
+        </div>
+    {% empty %}
+        <p>No tours available.</p>
+    {% endfor %}
+{% endblock %}

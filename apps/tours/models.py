@@ -2,18 +2,6 @@ from django.db import models
 from django.conf import settings
 
 
-class TourCategory(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    icon = models.ImageField(upload_to='category_icons/', blank=True)
-
-    class Meta:
-        verbose_name_plural = 'Tour Categories'
-
-    def __str__(self):
-        return self.name
-
-
 class Tour(models.Model):
     DIFFICULTY_CHOICES = (
         ('easy', 'Easy'),
@@ -24,7 +12,6 @@ class Tour(models.Model):
     guide = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tours')
     title = models.CharField(max_length=200)
     description = models.TextField()
-    categories = models.ManyToManyField(TourCategory)
     location = models.ForeignKey('common.Location', on_delete=models.CASCADE)
     duration = models.DurationField()
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES)

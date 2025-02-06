@@ -75,12 +75,10 @@ class BaseProfileForm(forms.ModelForm):
 
 class TouristProfileForm(BaseProfileForm):
     class Meta(BaseProfileForm.Meta):
-        fields = BaseProfileForm.Meta.fields + ['preferences']
+        fields = BaseProfileForm.Meta.fields
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['preferences'].widget = forms.CheckboxSelectMultiple()
-
 
 class GuideProfileForm(BaseProfileForm):
     class Meta(BaseProfileForm.Meta):
