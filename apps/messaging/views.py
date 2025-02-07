@@ -7,6 +7,8 @@ from.forms import MessageForm
 def conversation_view(request, conversation_id):
     conversation = get_object_or_404(Conversation, pk=conversation_id)
     messages = conversation.messages.all()
+    other_user = conversation.participants.exclude(id=request.user.id).first()
+
     if request.method == 'POST':
         form = MessageForm(request.POST)
         if form.is_valid():
@@ -17,7 +19,15 @@ def conversation_view(request, conversation_id):
             return redirect('messaging:conversation_view', conversation_id)
     else:
         form = MessageForm()
-    return render(request, 'messaging/conversation.html', {'conversation': conversation, 'messages': messages, 'form': form})
+
+    return render(request, 'messaging/conversation.html', {
+        'conversation': conversation,
+        'messages': messages,
+        'form': form,
+        'other_user': other_user
+    })
+
+#... (your other views)...
 
 @login_required
 def create_conversation(request, user_id):  # user_id of the other participant
@@ -25,7 +35,7 @@ def create_conversation(request, user_id):  # user_id of the other participant
         conversation = Conversation.objects.get(participants=request.user, id=user_id)
     except Conversation.DoesNotExist:
         conversation = Conversation.objects.create()
-        conversation.participants.add(request.user, id=user_id)
+        conversation.participants.add(request.user, user_id)
         conversation.save()
     return redirect('messaging:conversation_view', conversation.id)
 

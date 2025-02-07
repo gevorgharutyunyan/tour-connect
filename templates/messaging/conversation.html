@@ -1,8 +1,12 @@
-<h2>Conversation with {{ conversation.participants.exclude(id=request.user.id).first }}</h2>
-{% for message in messages %}
-<p><strong>{{ message.sender }}:</strong> {{ message.content }}</p>
-{% endfor %}
-<form method="post">
+<h2>Conversation with {{ other_user.username }}</h2>
+
+<div id="message-container">
+  {% for message in messages %}
+    <p><strong>{{ message.sender.username }}:</strong> {{ message.content }}</p>
+  {% endfor %}
+</div>
+
+<form method="post" id="message-form">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Send</button>

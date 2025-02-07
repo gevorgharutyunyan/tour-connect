@@ -30,3 +30,18 @@ def create_booking(request, tour_date_id):
 def booking_detail(request, booking_id):
     booking = get_object_or_404(Booking, pk=booking_id)
     return render(request, 'bookings/booking_detail.html', {'booking': booking})
+
+
+@login_required
+def confirm_booking(request, booking_id):
+    booking = get_object_or_404(Booking, pk=booking_id)
+    booking.status = 'confirmed'
+    booking.save()
+    return redirect('accounts:guide_dashboard')  # Redirect back to the guide dashboard
+
+@login_required
+def cancel_booking(request, booking_id):
+    booking = get_object_or_404(Booking, pk=booking_id)
+    booking.status = 'cancelled'
+    booking.save()
+    return redirect('accounts:guide_dashboard')

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Cancel Booking</h2>
+    <p>Are you sure you want to cancel this booking?</p>
+    <p>Tourist: {{ booking.tourist.username }}</p>
+    <p>Tour: {{ booking.tour_date.tour.title }}</p>
+    <p>Date: {{ booking.tour_date.start_date }}</p>
+    <p>Participants: {{ booking.number_of_participants }}</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Cancel Booking</button>
+        <a href="{% url 'accounts:guide_dashboard' %}" class="btn btn-secondary">Go Back</a>
+    </form>
+{% endblock %}

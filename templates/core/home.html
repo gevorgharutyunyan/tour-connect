@@ -16,14 +16,21 @@
     {% for tour in tours %}
         <div>
             <h3>{{ tour.title }}</h3>
-            <p>{{ tour.description }}</p>
+            <p>Guide: {{ tour.guide.username }}</p> <p>{{ tour.description }}</p>
             <p>Price: {{ tour.price }}</p>
-            <a href="{% if user.is_authenticated %}
-                         {% url 'bookings:create_booking' tour.dates.all.first.id %}
-                         {% else %}
-                         {% url 'accounts:login' %}?next={{ request.path }}
-                         {% endif %}">Book Now</a>
-            <a href="{% if user.is_authenticated %}{% url 'add_to_wishlist' tour.id %}{% else %}{% url 'login' %}?next={{ request.path }}{% endif %}">Add to Wishlist</a>
+
+            {% if tour.dates.all.exists %}
+                <a href="{% if user.is_authenticated %}{% url 'bookings:create_booking' tour.dates.all.first.id %}{% else %}{% url 'accounts:login' %}?next={{ request.path }}{% endif %}">Book Now</a>
+            {% else %}
+                <p>No dates available for this tour yet.</p>
+            {% endif %}
+
+            <a href="{% if user.is_authenticated %}{% url 'reviews:add_to_wishlist' tour.id %}{% else %}{% url 'accounts:login' %}?next={{ request.path }}{% endif %}">Add to Wishlist</a>
+            <a href="{% if user.is_authenticated %}{% url 'messaging:create_conversation' tour.guide.id %}{% else %}{% url 'accounts:login' %}?next={{ request.path }}{% endif %}">Message Guide</a>
+            <h2>Messages</h2>
+            <p>You have {{ unread_messages_count }} unread messages.</p>
+            <a href="{% url 'messaging:inbox' %}">View Messages</a>
+
 
             {% for image in tour.images.all %}
                 <img src="{{ image.image.url }}" alt="{{ image.caption }}" width="200">
@@ -31,6 +38,5 @@
 
         </div>
     {% endfor %}
-
 </body>
 </html>

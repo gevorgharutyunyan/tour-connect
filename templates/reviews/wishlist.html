@@ -1,0 +1,12 @@
+<h2>My Wishlist</h2>
+<ul>
+    {% for item in wishlist_items %}
+        <li>
+            <a href="{% url 'tours:tour-detail' item.tour.id %}">{{ item.tour.title }}</a>
+            <p>Added on: {{ item.added_date }}</p>
+            {% if item.notes %}
+                <p>Notes: {{ item.notes }}</p>
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>
