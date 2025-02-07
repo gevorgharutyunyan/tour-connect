@@ -9,7 +9,7 @@ def add_language(request):
         form = LanguageForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('tours:create_tour')  # Redirect to tour creation
+            return redirect('tours:create-tour')  # Redirect to tour creation
     else:
         form = LanguageForm()
     return render(request, 'common/add_language.html', {'form': form})
@@ -21,7 +21,7 @@ def add_location(request):
         form = LocationForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('tours:create_tour')  # Redirect to tour creation
+            return redirect('tours:create-tour')  # Redirect to tour creation
     else:
         form = LocationForm()
     return render(request, 'common/add_location.html', {'form': form})

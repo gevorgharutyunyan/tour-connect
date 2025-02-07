@@ -1,27 +1,36 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome to Tour Connect</title>
+</head>
+<body>
+    <h1>Welcome to Tour Connect</h1>
 
-{% block content %}
-<div class="container mx-auto mt-8">
-    <h1 class="text-3xl font-bold mb-6">Welcome to GuideHub</h1>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="p-6 bg-white rounded-lg shadow">
-            <h2 class="text-xl font-bold mb-4">For Tourists</h2>
-            <p class="mb-4">Find unique tours and local experiences.</p>
-            <a href="{% url 'accounts:login' %}" class="inline-block bg-blue-500 text-white px-4 py-2 rounded">
-                Start Exploring
-            </a>
-        </div>
-        
-        <div class="p-6 bg-white rounded-lg shadow">
-            <h2 class="text-xl font-bold mb-4">For Guides</h2>
-            <p class="mb-4">Share your expertise and host tours.</p>
-            <a href="{% url 'accounts:login' %}" class="inline-block bg-green-500 text-white px-4 py-2 rounded">
-                Start Hosting
-            </a>
-        </div>
+    {% if user.is_authenticated %}
         <a href="{% url 'accounts:logout' %}">Logout</a>
-        <a href="{% url 'accounts:profile' %}">Profile</a>
-    </div>
-</div>
-{% endblock %}
+    {% else %}
+        <a href="{% url 'accounts:login' %}">Login</a> | <a href="{% url 'accounts:select_user_type' %}">Register</a>
+    {% endif %}
+
+    <h2>Featured Tours</h2>
+    {% for tour in tours %}
+        <div>
+            <h3>{{ tour.title }}</h3>
+            <p>{{ tour.description }}</p>
+            <p>Price: {{ tour.price }}</p>
+            <a href="{% if user.is_authenticated %}
+                         {% url 'bookings:create_booking' tour.dates.all.first.id %}
+                         {% else %}
+                         {% url 'accounts:login' %}?next={{ request.path }}
+                         {% endif %}">Book Now</a>
+            <a href="{% if user.is_authenticated %}{% url 'add_to_wishlist' tour.id %}{% else %}{% url 'login' %}?next={{ request.path }}{% endif %}">Add to Wishlist</a>
+
+            {% for image in tour.images.all %}
+                <img src="{{ image.image.url }}" alt="{{ image.caption }}" width="200">
+            {% endfor %}
+
+        </div>
+    {% endfor %}
+
+</body>
+</html>

@@ -6,8 +6,8 @@ app_name = "tours"
 urlpatterns = [
     path('', TourListView.as_view(), name='tour-list'),
     path('<int:pk>/', TourDetailView.as_view(), name='tour-detail'),
-    path('create/', TourCreateView.as_view(), name='create_tour'),
-    path('<int:pk>/edit/', TourUpdateView.as_view(), name='tour-edit'),
+    path('create/', TourCreateView.as_view(), name='create-tour'),
+    path('<int:pk>/edit/', TourUpdateView.as_view(), name='tour-update'),
     path('<int:pk>/delete/', TourDeleteView.as_view(), name='tour-delete'),
 
     path('tours/<int:tour_id>/dates/add/', TourDateCreateView.as_view(), name='tourdate-add'),

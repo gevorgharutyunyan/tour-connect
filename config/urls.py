@@ -24,5 +24,8 @@ urlpatterns = [
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
     path('tours/', include('apps.tours.urls', namespace='tours')),
     path('tours/', include('apps.common.urls', namespace='common')),
+    path('bookings/', include('apps.bookings.urls', namespace='bookings')),
+    path('reviews/', include('apps.reviews.urls', namespace='reviews')),
+    path('message/', include('apps.messaging.urls', namespace='messaging')),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -8,7 +8,7 @@
     <p><strong>Max Participants:</strong> {{ tour.max_participants }}</p>
 
     {% if user == tour.guide %}
-        <a href="{% url 'tours:tour-edit' tour.id %}">Edit</a>
+        <a href="{% url 'tours:tour-update' tour.id %}">Edit</a>
         <a href="{% url 'tours:tour-delete' tour.id %}">Delete</a>
     {% endif %}
 {% endblock %}

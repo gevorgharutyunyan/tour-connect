@@ -1,0 +1,8 @@
+<h2>Create Review for Booking #{{ booking.id }}</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ review_form.as_p }}
+    {{ photo_form.as_p }}
+    <button type="submit">Submit Review</button>
+</form>
+

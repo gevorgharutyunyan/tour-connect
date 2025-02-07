@@ -1,0 +1,11 @@
+# reviews/templates/review_detail.html
+<h2>Review Details</h2>
+<p>Rating: {{ review.rating }}</p>
+<p>Comment: {{ review.comment }}</p>
+{% if review.photos.all %}
+    <h3>Photos</h3>
+    {% for photo in review.photos.all %}
+        <img src="{{ photo.image.url }}" alt="{{ photo.caption }}" width="200">
+        <p>{{ photo.caption }}</p>
+    {% endfor %}
+{% endif %}

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}  {% block title %}Guide Dashboard{% endblock %}
+
+{% block content %}
+    <h1>Welcome to Your Guide Dashboard, {{ user.username }}!</h1>
+
+    <h2>Your Listed Tours</h2>
+    {% if tours %}  <ul>
+            {% for tour in tours %}
+                <li>
+                    <h3><a href="{% url 'tours:tour-detail' tour.pk %}">{{ tour.title }}</a></h3>
+                    <p>{{ tour.description }}</p>
+                    <p>Price: {{ tour.price }}</p>
+                    <a href="{% url 'tours:tour-update' tour.pk %}">Edit Tour</a> |
+                    <a href="{% url 'tours:tour-delete' tour.pk %}">Delete Tour</a> |
+                    <a href="{% url 'tours:tourdate-add' tour.id %}">Add Date</a> |
+                    <a href="{% url 'tours:tourimage-add' tour.id %}">Add Image</a>
+                    <ul>
+                        {% for image in tour.images.all %}
+                            <img src="{{ image.image.url }}" alt="{{ image.caption }}" width="200">
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You haven't listed any tours yet. <a href="{% url 'tours:create_tour' %}">Create a new tour</a>!</p>
+    {% endif %}
+
+    <h2>Booking Requests</h2>
+    {% if booking_requests %}
+        <ul>
+            {% for booking in booking_requests %}
+                <li>
+                    <p>Tourist: {{ booking.tourist }}</p>
+                    <p>Tour: {{ booking.tour_date.tour.title }}</p>
+                    <p>Date: {{ booking.tour_date.start_date }}</p>
+                    <p>Participants: {{ booking.number_of_participants }}</p>
+                    <p>Status: {{ booking.status }}</p>
+                    {% if booking.status == 'pending' %}
+                        <a href="{% url 'bookings:confirm_booking' booking.pk %}">Confirm</a> |
+                        <a href="{% url 'bookings:cancel_booking' booking.pk %}">Cancel</a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No new booking requests.</p>
+    {% endif %}
+
+    <h2>Messages</h2>
+    <p>You have {{ unread_messages_count }} unread messages.</p>
+    <a href="{% url 'messaging:inbox' %}">View Messages</a>
+
+    <h2>Reviews</h2>
+    {% if reviews %}
+        <ul>
+            {% for review in reviews %}
+                <li>
+                    <p>Tourist: {{ review.booking.tourist }}</p>
+                    <p>Rating: {{ review.rating }}</p>
+                    <p>Comment: {{ review.comment }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No reviews yet.</p>
+    {% endif %}
+    <a href="{% url 'accounts:logout' %}">Logout</a>
+
+{% endblock %}

@@ -1,6 +1,7 @@
 # apps/accounts/views.py
 from django.contrib.auth import login
 from django.contrib import messages
+from django.urls import reverse_lazy
 from django.views import View
 from .forms import CustomLoginForm, UserTypeForm, TouristRegistrationForm, GuideRegistrationForm
 from django.contrib.auth.views import LoginView
@@ -8,13 +9,26 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Profile
 from .forms import TouristProfileForm, GuideProfileForm
-
+from apps.tours.models import Tour
+from apps.messaging.models import Message
+from apps.bookings.models import Booking
+from apps.reviews.models import Review
 
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
     form_class = CustomLoginForm
     redirect_authenticated_user = True
+
+    def get_success_url(self):
+        user = self.request.user  # Get the logged-in user
+        if user.user_type == 'tourist':
+            return reverse_lazy('home') # Redirect to tourist dashboard
+        elif user.user_type == 'guide':
+            return reverse_lazy('accounts:guide_dashboard')  # Redirect to guide dashboard
+        else:
+            return reverse_lazy('home')
+
 
 
 class UserTypeView(View):
@@ -97,3 +111,27 @@ def profile_view(request):
 
     context = {'form': form, 'profile': profile, 'user_type': user.get_user_type_display()}
     return render(request, template, context)
+
+
+"""
+@login_required
+def tourist_dashboard(request):
+    # Fetch data relevant to tourists (e.g., booked tours)
+    return render(request, 'accounts/tourist_dashboard.html', context={'data': tourist_data})
+"""
+
+
+@login_required
+def guide_dashboard(request):
+    tours = Tour.objects.filter(guide=request.user)
+    booking_requests = Booking.objects.filter(tour_date__tour__guide=request.user)  # Filter bookings
+    unread_messages_count = Message.objects.filter(conversation__participants=request.user, is_read=False).count() #Unread messages
+    reviews = Review.objects.filter(booking__tour_date__tour__guide=request.user)
+
+    context = {
+        'tours': tours,
+        'booking_requests': booking_requests,
+        'unread_messages_count': unread_messages_count,
+        'reviews': reviews,
+    }
+    return render(request, 'accounts/guide_dashboard.html', context)

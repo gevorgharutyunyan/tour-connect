@@ -1,7 +1,7 @@
 from django.urls import path
-from .views import home_view
-
+from. import views
 
 urlpatterns = [
-    path('', home_view, name='home'),
+    path('', views.home, name='home'),  # Your landing page URL
+    path('add_to_wishlist/<int:tour_id>/', views.add_to_wishlist, name='add_to_wishlist'),
 ]

@@ -1,0 +1,16 @@
+<h2>Inbox</h2>
+<ul>
+    {% for item in conversation_data %}  <li>
+            <a href="{% url 'messaging:conversation_view' item.conversation.id %}">
+                {% if item.other_user_username %}
+                    {{ item.other_user_username }}
+                {% else %}
+                    (No other participant)  {% endif %}
+
+                {% if item.last_message %}
+                    <p>{{ item.last_message.content|truncatechars:50 }}</p>
+                {% endif %}
+            </a>
+        </li>
+    {% endfor %}
+</ul>

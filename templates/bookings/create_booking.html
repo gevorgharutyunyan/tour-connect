@@ -1,0 +1,6 @@
+<form method="post">
+    {% csrf_token %}
+    {{ booking_form.as_p }}
+    {{ payment_form.as_p }}
+    <button type="submit">Create Booking</button>
+</form>

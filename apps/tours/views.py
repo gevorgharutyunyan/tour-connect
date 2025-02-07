@@ -1,8 +1,5 @@
-from apps.common.models import Language, Location
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404
-from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
 
@@ -14,7 +11,7 @@ from .models import Tour, TourDate, TourImage
 # LIST VIEW: Show all active tours
 class TourListView(ListView):
     model = Tour
-    template_name = 'tour/tour_list.html'
+    template_name = 'tours/tour_list.html'
     context_object_name = 'tours'
     ordering = ['-created_at']
 
@@ -71,7 +68,7 @@ class TourDeleteView(LoginRequiredMixin, GuideRequiredMixin, DeleteView):
 class TourImageCreateView(LoginRequiredMixin, GuideRequiredMixin, CreateView):
     model = TourImage
     form_class = TourImageForm
-    template_name = 'tours/tourimage_form.html'
+    template_name = 'tours/tour_image_form.html'
 
     def form_valid(self, form):
         form.instance.tour = get_object_or_404(Tour, id=self.kwargs['tour_id'])
@@ -84,7 +81,7 @@ class TourImageCreateView(LoginRequiredMixin, GuideRequiredMixin, CreateView):
 class TourImageUpdateView(LoginRequiredMixin, GuideRequiredMixin, UpdateView):
     model = TourImage
     form_class = TourImageForm
-    template_name = 'tours/tourimage_form.html'
+    template_name = 'tours/tour_image_form.html'
 
     def get_success_url(self):
         return reverse_lazy('tours:tour-detail', kwargs={'pk': self.object.tour.id})
@@ -92,7 +89,7 @@ class TourImageUpdateView(LoginRequiredMixin, GuideRequiredMixin, UpdateView):
 
 class TourImageDeleteView(LoginRequiredMixin, GuideRequiredMixin, DeleteView):
     model = TourImage
-    template_name = 'tours/tourimage_confirm_delete.html'
+    template_name = 'tours/tour_image_confirm_delete.html'
 
     def get_success_url(self):
         return reverse_lazy('tours:tour-detail', kwargs={'pk': self.object.tour.id})
@@ -102,7 +99,7 @@ class TourImageDeleteView(LoginRequiredMixin, GuideRequiredMixin, DeleteView):
 class TourDateCreateView(LoginRequiredMixin, GuideRequiredMixin, CreateView):
     model = TourDate
     form_class = TourDateForm
-    template_name = 'tours/tourdate_form.html'
+    template_name = 'tours/tour_date_form.html'
 
     def form_valid(self, form):
         form.instance.tour = get_object_or_404(Tour, id=self.kwargs['tour_id'])
@@ -115,7 +112,7 @@ class TourDateCreateView(LoginRequiredMixin, GuideRequiredMixin, CreateView):
 class TourDateUpdateView(LoginRequiredMixin, GuideRequiredMixin, UpdateView):
     model = TourDate
     form_class = TourDateForm
-    template_name = 'tours/tourdate_form.html'
+    template_name = 'tours/tour_date_form.html'
 
     def get_success_url(self):
         return reverse_lazy('tours:tour-detail', kwargs={'pk': self.object.tour.id})
@@ -123,7 +120,7 @@ class TourDateUpdateView(LoginRequiredMixin, GuideRequiredMixin, UpdateView):
 
 class TourDateDeleteView(LoginRequiredMixin, GuideRequiredMixin, DeleteView):
     model = TourDate
-    template_name = 'tours/tourdate_confirm_delete.html'
+    template_name = 'tours/tour_date_confirm_delete.html'
 
     def get_success_url(self):
         return reverse_lazy('tours:tour-detail', kwargs={'pk': self.object.tour.id})
