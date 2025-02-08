@@ -47,3 +47,6 @@ class TourDate(models.Model):
     available_spots = models.PositiveIntegerField()
     price_override = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     is_available = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.start_date} - {self.end_date} ({self.tour.title})"

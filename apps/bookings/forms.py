@@ -1,7 +1,15 @@
 from django import forms
 from.models import Booking, Payment
+from apps.tours.models import TourDate
 
 class BookingForm(forms.ModelForm):
+    tour_date = forms.ModelChoiceField(
+        queryset=TourDate.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        empty_label="Select a Tour Date",
+        required=True
+    )
+
     class Meta:
         model = Booking
         fields = ['tour_date', 'number_of_participants', 'special_requests']
@@ -9,4 +17,4 @@ class BookingForm(forms.ModelForm):
 class PaymentForm(forms.ModelForm):
     class Meta:
         model = Payment
-        fields = ['amount', 'payment_method', 'transaction_id']  # Add more fields as needed
+        fields = ['payment_method']  # Add more fields as needed
