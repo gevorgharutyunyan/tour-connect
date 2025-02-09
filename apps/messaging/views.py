@@ -27,16 +27,14 @@ def conversation_view(request, conversation_id):
         'other_user': other_user
     })
 
-#... (your other views)...
+
 
 @login_required
 def create_conversation(request, user_id):  # user_id of the other participant
-    try:
-        conversation = Conversation.objects.get(participants=request.user, id=user_id)
-    except Conversation.DoesNotExist:
+    conversation = Conversation.objects.filter(participants=request.user).filter(participants=user_id).first()
+    if not conversation:
         conversation = Conversation.objects.create()
         conversation.participants.add(request.user, user_id)
-        conversation.save()
     return redirect('messaging:conversation_view', conversation.id)
 
 
