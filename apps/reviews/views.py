@@ -4,6 +4,9 @@ from .models import Review
 from .forms import ReviewForm, ReviewPhotoForm
 from .models import Wishlist
 from apps.bookings.models import Booking
+from django.contrib import messages
+from apps.tours.models import Tour
+
 
 @login_required
 def create_review(request, booking_id):
