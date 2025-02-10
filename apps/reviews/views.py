@@ -17,6 +17,10 @@ def create_review(request, booking_id):
     except Review.DoesNotExist:
         pass  # Proceed to create review if it doesn't exist
 
+    # Check if the booking is completed and the user is the tourist
+    if booking.status!= 'completed' or booking.tourist!= request.user:
+        return redirect('home')  # Or display an error message
+
     if request.method == 'POST':
         review_form = ReviewForm(request.POST)
         photo_form = ReviewPhotoForm(request.POST, request.FILES)

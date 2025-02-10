@@ -9,3 +9,4 @@ venv/
 apps/*/migrations
 .idea/
 review_photos/
+media/

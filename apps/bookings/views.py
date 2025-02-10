@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from.models import Booking, Payment
 from.forms import BookingForm, PaymentForm
 from apps.tours.models import TourDate
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
 
 @login_required
 def create_booking(request, tour_date_id):
@@ -45,3 +47,11 @@ def cancel_booking(request, booking_id):
     booking.status = 'cancelled'
     booking.save()
     return redirect('accounts:guide_dashboard')
+
+class BookingListView(LoginRequiredMixin, ListView):
+    model = Booking
+    template_name = 'bookings/booking_list.html'
+    context_object_name = 'bookings'
+
+    def get_queryset(self):
+        return Booking.objects.filter(tourist=self.request.user)

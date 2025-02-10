@@ -1,0 +1,11 @@
+<h2>My Bookings</h2>
+<ul>
+    {% for booking in bookings %}
+        <li>
+            <p>Tour: {{ booking.tour_date.tour.title }}</p>
+            <p>Date: {{ booking.tour_date.start_date }}</p>
+            <p>Status: {{ booking.status }}</p>
+            <a href="{% url 'bookings:booking_detail' booking.id %}">View Details</a>
+        </li>
+    {% endfor %}
+</ul>
