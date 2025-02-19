@@ -75,7 +75,7 @@ class RegistrationView(View):
             user = form.save()
             login(request, user)
             messages.success(request, f'Welcome! Your {user_type} account has been created successfully.')
-            return redirect('tourist_dashboard' if user_type == 'tourist' else 'guide_dashboard')
+            return redirect('accounts:tourist_dashboard' if user_type == 'tourist' else 'accounts:guide_dashboard')
 
         return render(request, template, {'form': form})
 

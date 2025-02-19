@@ -1,19 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Create a New Tour</h2>
 
   <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
 
-    <p>
-      Don't see your location? <a href="{% url 'common:add_location' %}" target="_blank">Add a new location</a>
-    </p>
+    {% if user.is_authenticated and user.user_type == 'guide' %}
+        <h2>Create a New Tour</h2>
+        {% csrf_token %}
+        {{ form.as_p }}
+        <p>
+          Don't see your location? <a href="{% url 'common:add_location' %}" target="_blank">Add a new location</a>
+        </p>
 
-    <p>
-      Don't see your language? <a href="{% url 'common:add_language' %}" target="_blank">Add a new language</a>
-    </p>
+        <p>
+          Don't see your language? <a href="{% url 'common:add_language' %}" target="_blank">Add a new language</a>
+        </p>
 
-    <button type="submit">Create Tour</button>
+        <button type="submit">Create Tour</button>
+    {% else %}
+        <h2> You are unable to create a tour as you ara a tourist</h2>
+    {% endif %}
   </form>
 {% endblock %}

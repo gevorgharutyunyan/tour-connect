@@ -2,7 +2,7 @@
 
 {% block content %}
     <h1>Welcome to Your Guide Dashboard, {{ user.username }}!</h1>
-
+    {% if user.is_authenticated and user.user_type == 'guide' %}
     <h2>Your Listed Tours</h2>
     {% if tours %}  <ul>
             {% for tour in tours %}
@@ -23,7 +23,9 @@
             {% endfor %}
         </ul>
     {% else %}
-        <p>You haven't listed any tours yet. <a href="{% url 'tours:create_tour' %}">Create a new tour</a>!</p>
+        <p>You haven't listed any tours yet. <a href="{% url 'tours:create-tour' %}">Create a new tour</a>!</p>
+    {% endif %}
+
     {% endif %}
 
     <h2>Booking Requests</h2>

@@ -29,7 +29,7 @@ class TourDetailView(DetailView):
 # Mixin to restrict actions only for guides
 class GuideRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.user_type == 'guide'
+        return self.request.user.is_authenticated and self.request.user.user_type == 'guide' # FIXME: check why thi is not working
 
 
 class TourCreateView(LoginRequiredMixin, CreateView):
