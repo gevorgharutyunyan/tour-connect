@@ -33,6 +33,13 @@
                 </div>
                 <button type="submit" class="btn">Sign In</button>
             </form>
+           <div class="social-login">
+                <p>Or sign in with:</p>
+                <a href="{% url 'social:begin' 'google-oauth2' %}" class="google-btn">
+                    <img src="{% static 'img/google-icon.png' %}" alt="Google Icon">
+                    Sign in with Google
+                </a>
+            </div>
             <div class="register">
                 <p>Don't have an account? <a href="{% url 'accounts:select_user_type' %}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Register</a></p>
             </div>

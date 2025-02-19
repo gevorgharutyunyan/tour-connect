@@ -1,0 +1,33 @@
+<!-- templates/accounts/google_select_user_type.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2>Select Your Role</h2>
+    <p>Please select your role to continue:</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="role-selection">
+            <div class="role-option">
+                <input type="radio" id="tourist" name="user_type" value="tourist" required>
+                <label for="tourist">
+                    <h3>Tourist</h3>
+                    <p>I want to book tours and explore destinations</p>
+                </label>
+            </div>
+
+            <div class="role-option">
+                <input type="radio" id="guide" name="user_type" value="guide" required>
+                <label for="guide">
+                    <h3>Guide</h3>
+                    <p>I want to create and manage tours</p>
+                </label>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Continue</button>
+    </form>
+</div>
+{% endblock %}

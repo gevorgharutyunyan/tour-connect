@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from apps.accounts.views import CustomLoginView
 urlpatterns = [
     path('', include('apps.core.urls')),
     path('admin/', admin.site.urls),
@@ -27,5 +28,7 @@ urlpatterns = [
     path('bookings/', include('apps.bookings.urls', namespace='bookings')),
     path('reviews/', include('apps.reviews.urls', namespace='reviews')),
     path('message/', include('apps.messaging.urls', namespace='messaging')),
+    path('social-auth/', include('social_django.urls', namespace='social')),
+    path('login/', CustomLoginView.as_view(), name='login'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

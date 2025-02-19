@@ -37,12 +37,8 @@
 
             {% elif not user.is_authenticated %}
                 <a href="{% url 'accounts:login' %}?next={{ request.path }}">Add to Wishlist</a>
-                <a href="{% url 'accounts:login' tour.guide.id %}?next={{ request.path }}">Message Guide</a>
+                <a href="{% url 'accounts:login' %}?next={{ request.path }}">Message Guide</a>
             {% endif %}
-
-            <h2>Messages</h2>
-            <p>You have {{ unread_messages_count }} unread messages.</p>
-            <a href="{% url 'messaging:inbox' %}">View Messages</a>
 
             {% for image in tour.images.all %}
                 <img src="{{ image.image.url }}" alt="{{ image.caption }}" width="200">

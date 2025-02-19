@@ -22,6 +22,8 @@ class CustomLoginView(LoginView):
 
     def get_success_url(self):
         user = self.request.user  # Get the logged-in user
+        if not user.user_type:
+            return reverse_lazy('accounts:google_select_user_type')
         if user.user_type == 'tourist':
             return reverse_lazy('home') # Redirect to tourist dashboard
         elif user.user_type == 'guide':
@@ -135,3 +137,20 @@ def guide_dashboard(request):
         'reviews': reviews,
     }
     return render(request, 'accounts/guide_dashboard.html', context)
+
+
+@login_required
+def google_select_user_type(request):
+    user_id = request.session.get('user_id')  # Get user ID from session
+    if not user_id:
+        return redirect('/')
+
+    user = request.user
+
+    if request.method == 'POST':
+        user_type = request.POST.get('user_type')
+        user.user_type = user_type
+        user.save()
+        return redirect('/')
+
+    return render(request, 'accounts/google_select_user_type.html')
