@@ -1,11 +1,9 @@
 # apps/accounts/views.py
-from django.contrib.auth import login
-from django.contrib import messages
+from django.contrib.auth import login, get_user_model
 from django.urls import reverse_lazy
 from django.views import View
 from .forms import CustomLoginForm, UserTypeForm, TouristRegistrationForm, GuideRegistrationForm
 from django.contrib.auth.views import LoginView
-from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Profile
 from .forms import TouristProfileForm, GuideProfileForm
@@ -13,7 +11,17 @@ from apps.tours.models import Tour
 from apps.messaging.models import Message
 from apps.bookings.models import Booking
 from apps.reviews.models import Review
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.contrib import messages
+from .forms import PasswordResetRequestForm, SetPasswordForm
 
+User = get_user_model()
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
@@ -154,3 +162,69 @@ def google_select_user_type(request):
         return redirect('/')
 
     return render(request, 'accounts/google_select_user_type.html')
+
+
+def password_reset_request(request):
+    if request.method == 'POST':
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            try:
+                user = User.objects.get(email=email)
+                # Generate token
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+                # Build reset URL
+                reset_url = request.build_absolute_uri(
+                    reverse('accounts:password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+                )
+
+                # Email content
+                context = {
+                    'user': user,
+                    'reset_url': reset_url,
+                }
+                email_html = render_to_string('accounts/password_reset_email.html', context)
+
+                # Send email
+                send_mail(
+                    'Password Reset Request',
+                    'Please click the link to reset your password',
+                    'noreply@yourdomain.com',
+                    [email],
+                    html_message=email_html,
+                    fail_silently=False,
+                )
+
+                messages.success(request, 'Password reset link has been sent to your email.')
+                return redirect('accounts:login')
+            except User.DoesNotExist:
+                messages.error(request, 'No user found with this email address.')
+    else:
+        form = PasswordResetRequestForm()
+
+    return render(request, 'accounts/password_reset_request.html', {'form': form})
+
+
+def password_reset_confirm(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        if request.method == 'POST':
+            form = SetPasswordForm(request.POST)
+            if form.is_valid():
+                user.set_password(form.cleaned_data['new_password1'])
+                user.save()
+                messages.success(request, 'Your password has been reset successfully.')
+                return redirect('accounts:login')
+        else:
+            form = SetPasswordForm()
+        return render(request, 'accounts/password_reset_confirm.html', {'form': form})
+    else:
+        messages.error(request, 'Password reset link is invalid or has expired.')
+        return redirect('accounts:login')

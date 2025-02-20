@@ -29,7 +29,7 @@
                 </div>
                 <div class="remember-forgot">
                     <label><input type="checkbox" name="remember"> Remember</label>
-                    <a href="#">Forgot password?</a>
+                    <a href="{% url 'accounts:password_reset_request' %}">Forgot password?</a>
                 </div>
                 <button type="submit" class="btn">Sign In</button>
             </form>
