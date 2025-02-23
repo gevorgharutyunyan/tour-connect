@@ -6,5 +6,5 @@
 <p>Booking Date: {{ booking.booking_date }}</p>
 <p>Status: {{ booking.status }}</p>
 {% if booking.status == 'completed' %}
-    <a href="{% url 'reviews:create_review' booking.id %}">Add Review</a>
+  <a href="{% url 'reviews:create_review' booking.id %}">Add Review</a>
 {% endif %}

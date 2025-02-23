@@ -1,19 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
   <h2>Create a New Tour</h2>
-
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
-
-    <p>
-      Don't see your location? <a href="{% url 'common:add_location' %}" target="_blank">Add a new location</a>
-    </p>
-
-    <p>
-      Don't see your language? <a href="{% url 'common:add_language' %}" target="_blank">Add a new language</a>
-    </p>
-
+    {{ tour_date_formset.management_form }}
+    {% for tour_date_form in tour_date_formset %}
+        {{ tour_date_form.as_p }}
+    {% endfor %}
     <button type="submit">Create Tour</button>
   </form>
 {% endblock %}

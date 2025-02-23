@@ -2,8 +2,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
-
-from .forms import TourForm, TourDateForm, TourImageForm
+from apps.common.models import Language, Location
+from .forms import TourForm, TourDateForm, TourImageForm, TourDateFormSet
 from .models import Tour, TourDate, TourImage
 
 
@@ -36,11 +36,40 @@ class TourCreateView(LoginRequiredMixin, CreateView):
     model = Tour
     form_class = TourForm
     template_name = 'tours/tour_create.html'
-    success_url = reverse_lazy('tours:tour-list')  # Redirect after successful creation
+    success_url = reverse_lazy('tours:tour-list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context['tour_date_formset'] = TourDateFormSet(self.request.POST)
+        else:
+            # Create an empty Tour instance and pass it to the formset
+            tour = Tour(guide=self.request.user)
+            context['tour_date_formset'] = TourDateFormSet(instance=tour)
+        return context
 
     def form_valid(self, form):
-        form.instance.guide = self.request.user  # Assign logged-in user as guide
-        return super().form_valid(form)
+        context = self.get_context_data()
+        tour_date_formset = context['tour_date_formset']
+        if tour_date_formset.is_valid():
+            location_name = form.cleaned_data['location_name']
+            location_country = form.cleaned_data['location_country']
+            languages = form.cleaned_data['languages']
+            location, created = Location.objects.get_or_create(name=location_name, country=location_country)
+            form.instance.location = location
+            languages_list = [lang.strip() for lang in languages.split(',')]
+            languages = []
+            for lang_name in languages_list:
+                lang, created = Language.objects.get_or_create(name=lang_name)
+                languages.append(lang)
+            form.instance.guide = self.request.user
+            self.object = form.save()
+            self.object.languages.set(languages)
+            tour_date_formset.instance = self.object
+            tour_date_formset.save()
+            return super().form_valid(form)
+        else:
+            return self.render_to_response(self.get_context_data(form=form))
 
 
 # UPDATE VIEW: Guide edits their own tour

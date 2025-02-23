@@ -4,7 +4,11 @@ from django.db import models
 
 class Booking(models.Model):
     STATUS_CHOICES = (
-        ('pending', 'Pending'), ('confirmed', 'Confirmed'), ('cancelled', 'Cancelled'), ('completed', 'Completed'),)
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+        ('completed', 'Completed'),
+    )
 
     tourist = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookings')
     tour_date = models.ForeignKey('tours.TourDate', on_delete=models.CASCADE)

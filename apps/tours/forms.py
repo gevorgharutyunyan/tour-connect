@@ -1,23 +1,16 @@
 from django import forms
 from .models import Tour, TourDate, TourImage
-from apps.common.models import Language, Location
-
+from django_countries.fields import CountryField
+from django.forms import inlineformset_factory, BaseInlineFormSet
 
 class TourForm(forms.ModelForm):
+    location_name = forms.CharField(max_length=100, required=True)
+    location_country = CountryField().formfield(required=False)
+    languages = forms.CharField(max_length=255, required=True, help_text="Enter languages separated by commas.")
+
     class Meta:
         model = Tour
-        exclude = ['guide', 'created_at', 'updated_at']
-        languages = forms.ModelMultipleChoiceField(
-            queryset=Language.objects.all(),
-            widget=forms.CheckboxSelectMultiple,
-            required=True
-        )
-
-        location = forms.ModelChoiceField(
-            queryset=Location.objects.all(),
-            empty_label="Select a Location",
-            required=True
-        )
+        exclude = ['guide', 'created_at', 'updated_at', 'location', 'languages']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
             'included_services': forms.Textarea(attrs={'rows': 2}),
@@ -26,19 +19,35 @@ class TourForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        guide = kwargs.pop('guide', None)  # Get the guide instance
         super().__init__(*args, **kwargs)
-        if guide:
-            # Ensure the guide can only select their own locations
-            self.fields['location'].queryset = guide.locations.all()
+
+
 
 
 class TourDateForm(forms.ModelForm):
     class Meta:
         model = TourDate
-        fields = ['start_date', 'end_date', 'start_time', 'available_spots', 'price_override', 'is_available']
+        fields = ['start_date', 'start_time', 'available_spots', 'price_override', 'is_available']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time'}),
+        }
 
+class BaseTourDateFormSet(BaseInlineFormSet):
+    def add_fields(self, form, index):
+        super().add_fields(form, index)
+        form.fields['start_date'].widget = forms.DateInput(attrs={'type': 'date'})
+        form.fields['start_time'].widget = forms.TimeInput(attrs={'type': 'time'})
 
+TourDateFormSet = inlineformset_factory(
+    Tour,
+    TourDate,
+    form=TourDateForm,
+    formset=BaseTourDateFormSet,
+    fields=('start_date', 'start_time', 'available_spots', 'price_override', 'is_available'),
+    extra=1,
+    can_delete=True
+)
 class TourImageForm(forms.ModelForm):
     class Meta:
         model = TourImage
