@@ -1,14 +1,23 @@
-{% extends "base.html" %}
-{% block content %}
-    <h2>Available Tours</h2>
-    {% for tour in tours %}
-        <div>
-            <h3><a href="{% url 'tours:tour-detail' tour.id %}">{{ tour.title }}</a></h3>
-            <p>{{ tour.description|truncatewords:20 }}</p>
-            <p>Location: {{ tour.location }}</p>
-            <p>Price: ${{ tour.price }}</p>
-        </div>
-    {% empty %}
-        <p>No tours available.</p>
-    {% endfor %}
-{% endblock %}
+<form method="get">
+    <input type="text" name="q" placeholder="Search tours..." value="{{ request.GET.q }}">
+    <input type="date" name="start_date" value="{{ request.GET.start_date }}">
+    <input type="date" name="end_date" value="{{ request.GET.end_date }}">
+    <button type="submit">Search</button>
+</form>
+
+{% for tour in tours %}
+    <h3>{{ tour.title }}</h3>
+    {% if tour.dates.all %}
+        <p>Available Dates:</p>
+        <ul>
+            {% for date in tour.dates.all %}
+                {% if date.start_date >= start_date and date.start_date <= end_date %}
+                    <li>{{ date.start_date }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No dates available for this tour yet.</p>
+    {% endif %}
+    </div>
+{% endfor %}

@@ -16,7 +16,20 @@ class TourListView(ListView):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        return Tour.objects.filter(is_active=True)
+        queryset = Tour.objects.filter(is_active=True)
+
+        if 'q' in self.request.GET:
+            query = self.request.GET.get('q')
+            queryset = queryset.filter(title__icontains=query)
+
+        if 'start_date' in self.request.GET and 'end_date' in self.request.GET:
+            start_date = self.request.GET.get('start_date')
+            end_date = self.request.GET.get('end_date')
+            if start_date and end_date:
+                # Filter tours with dates within the specified range
+                queryset = queryset.filter(dates__start_date__range=[start_date, end_date]).distinct()
+
+        return queryset
 
 
 # DETAIL VIEW: Show single tour details
