@@ -5,4 +5,12 @@
     <h3>Your Travel Preferences</h3>
     {{ form.preferences }}
 </div>
+<script>
+  // Prevent back navigation after logout
+  window.onpageshow = function(event) {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  };
+</script>
 {% endblock %}
