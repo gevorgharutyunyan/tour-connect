@@ -1,78 +1,140 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Welcome to Tour Connect</title>
-</head>
-<body>
-  <h1>Welcome to Tour Connect</h1>
+{% extends 'base.html' %}
+{% load static %}
 
-  {% if user.is_authenticated %}
-  <a href="{% url 'accounts:logout' %}">Logout</a>
-  {% else %}
-  <a href="{% url 'accounts:login' %}">Login</a> | <a href="{% url 'accounts:select_user_type' %}">Register</a>
-  {% endif %}
+{% block content %}
+<div class="hero" style="background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{% static 'images/hero-bg.jpg' %}') no-repeat center center; background-size: cover; color: white; text-align: center; padding: 4rem 2rem; margin: -2rem -2rem 2rem -2rem;">
+    <h1 style="font-size: 3rem; margin-bottom: 1rem;">Discover Amazing Tours</h1>
+    <p style="font-size: 1.2rem; margin-bottom: 2rem;">Connect with local guides and explore unique experiences around the world</p>
+    
+    <!-- Search Form -->
+    <form method="get" action="{% url 'tours:tour-list' %}" class="search-form" style="max-width: 800px; margin: 0 auto;">
+        <div style="display: flex; gap: 1rem; background: white; padding: 1rem; border-radius: 8px; box-shadow: var(--shadow);">
+            <input type="text" name="q" placeholder="Search tours..." value="{{ request.GET.q }}" 
+                   style="flex: 2; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 4px;">
+            <input type="date" name="start_date" value="{{ request.GET.start_date }}" 
+                   style="flex: 1; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 4px;">
+            <input type="date" name="end_date" value="{{ request.GET.end_date }}" 
+                   style="flex: 1; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 4px;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem;">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </div>
+    </form>
+</div>
 
-  <h2>Featured Tours</h2>
-  <a href="{% url 'bookings:booking_list' %}"> My Bookings</a>
+<!-- Featured Tours Section -->
+<section>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2 style="margin: 0;">Featured Tours</h2>
+        <a href="{% url 'tours:tour-list' %}" class="btn btn-primary">View All Tours</a>
+    </div>
 
-  <form method="get" action="{% url 'tours:tour-list' %}">
-    <input type="text" name="q" placeholder="Search tours..." value="{{ request.GET.q }}">
-    <input type="date" name="start_date" value="{{ request.GET.start_date }}">
-    <input type="date" name="end_date" value="{{ request.GET.end_date }}">
-    <button type="submit">Search</button>
-  </form>
+    <div class="tour-grid">
+        {% for tour in tours %}
+        <div class="tour-card">
+            {% if tour.images.first %}
+                <img src="{{ tour.images.first.image.url }}" alt="{{ tour.title }}" class="tour-image">
+            {% endif %}
+            
+            <div class="tour-content">
+                <h3 class="tour-title">{{ tour.title }}</h3>
+                <p style="color: #666; margin-bottom: 1rem;">{{ tour.description|truncatewords:20 }}</p>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span><i class="fas fa-user-tie"></i> {{ tour.guide.get_full_name|default:tour.guide.username }}</span>
+                    <span style="font-weight: bold; color: var(--primary-color);">${{ tour.price }}</span>
+                </div>
 
-  {% for tour in tours %}
-  <div>
-    <h3>{{ tour.title }}</h3>
-    <p>Guide: {{ tour.guide.username }}</p>
-    <p>{{ tour.description }}</p>
-    <p>Price: {{ tour.price }}</p>
+                {% if tour.dates.all %}
+                    <div style="margin: 1rem 0; padding: 0.5rem; background-color: var(--light-gray); border-radius: 4px;">
+                        <i class="far fa-calendar-alt"></i>
+                        {% with tour.dates.count as tour_count %}
+                        {% with tour.dates.first.start_date as start_date %}
+                        {% with tour.dates.last.start_date as end_date %}
+                            {{ tour_count }} dates available
+                            <br>
+                            <small>From {{ start_date|date:"M d, Y" }} to {{ end_date|date:"M d, Y" }}</small>
+                        {% endwith %}
+                        {% endwith %}
+                        {% endwith %}
+                    </div>
 
-{% if tour.dates.all %}
-    <p>
-        {% with tour.dates.count as tour_count %}
-        {% with tour.dates.first.start_date as start_date %}
-        {% with tour.dates.last.start_date as end_date %}
-        There are {{ tour_count }} available dates between {{ start_date|date:"Y-m-d" }} and {{ end_date|date:"Y-m-d" }}.
-        {% endwith %}
-        {% endwith %}
-        {% endwith %}
-    </p>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                        {% if user.is_authenticated and user.user_type == 'tourist' %}
+                            {% if tour.is_active %}
+                                <a href="{% url 'tours:tour-detail' tour.id %}" class="btn btn-primary" style="flex: 2;">
+                                    View Details & Book
+                                </a>
+                            {% else %}
+                                <span class="btn btn-danger" style="flex: 2;">Not Available</span>
+                            {% endif %}
+                        {% elif not user.is_authenticated %}
+                            <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-primary" style="flex: 2;">
+                                View Details & Book
+                            </a>
+                        {% endif %}
 
-    {% if user.is_authenticated and user.user_type == 'tourist' %}
-        {% if tour.is_active %}
-            <a href="{% url 'tours:tour-detail' tour.id %}">View Details & Book</a>
-        {% else %}
-            <a>Is not active</a>
-        {% endif %}
-    {% elif not user.is_authenticated %}
-        <a href="{% url 'accounts:login' %}?next={{ request.path }}">View Details & Book</a>
-    {% endif %}
-{% else %}
-    <p>No dates available for this tour yet.</p>
-{% endif %}
+                        {% if user.is_authenticated and user.user_type == 'tourist' %}
+                            <a href="{% url 'messaging:create_conversation' tour.guide.id %}" class="btn btn-secondary" style="flex: 1;">
+                                <i class="fas fa-envelope"></i>
+                            </a>
+                        {% endif %}
+                        
+                        {% include 'components/wishlist_button.html' with tour=tour is_in_wishlist=tour.is_in_wishlist %}
+                    </div>
+                {% else %}
+                    <p style="color: var(--danger-color); margin-top: 1rem;">
+                        <i class="fas fa-calendar-times"></i> No dates available
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+            <i class="fas fa-search" style="font-size: 3rem; color: var(--border-color); margin-bottom: 1rem;"></i>
+            <h3>No Tours Found</h3>
+            <p>Try adjusting your search criteria or check back later for new tours.</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
 
-    {% if user.is_authenticated and user.user_type == 'tourist' %}
-    <a href="{% url 'reviews:add_to_wishlist' tour.id %}">Add to Wishlist</a>
-    <a href="{% url 'messaging:create_conversation' tour.guide.id %}">Message Guide</a>
-    {% elif not user.is_authenticated %}
-    <a href="{% url 'accounts:login' %}?next={{ request.path }}">Add to Wishlist</a>
-    <a href="{% url 'accounts:login' %}?next={{ request.path }}">Message Guide</a>
-    {% endif %}
+<!-- Features Section -->
+<section style="margin-top: 4rem; text-align: center;">
+    <h2 style="margin-bottom: 2rem;">Why Choose TourConnect?</h2>
+    
+    <div class="dashboard-grid">
+        <div class="dashboard-card">
+            <i class="fas fa-map-marked-alt" style="font-size: 2.5rem; color: var(--primary-color);"></i>
+            <h3>Local Experiences</h3>
+            <p>Connect with experienced local guides for authentic tours.</p>
+        </div>
+        <div class="dashboard-card">
+            <i class="fas fa-shield-alt" style="font-size: 2.5rem; color: var(--primary-color);"></i>
+            <h3>Secure Booking</h3>
+            <p>Safe and secure payment process for your peace of mind.</p>
+        </div>
+        <div class="dashboard-card">
+            <i class="fas fa-heart" style="font-size: 2.5rem; color: var(--primary-color);"></i>
+            <h3>Personalized Tours</h3>
+            <p>Find tours that match your interests and preferences.</p>
+        </div>
+        <div class="dashboard-card">
+            <i class="fas fa-comments" style="font-size: 2.5rem; color: var(--primary-color);"></i>
+            <h3>Direct Communication</h3>
+            <p>Chat directly with guides to customize your experience.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
 
-    {% for image in tour.images.all %}
-    <img src="{{ image.image.url }}" alt="{{ image.caption }}" width="200">
-    {% endfor %}
-  </div>
-  {% endfor %}
-</body>
+{% block extra_js %}
 <script>
-  // Prevent back navigation after logout
-  window.onpageshow = function(event) {
-    if (event.persisted) {
-      window.location.reload();
-    }
-  };
+    // Prevent back navigation after logout
+    window.onpageshow = function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    };
 </script>
-</html>
+{% endblock %}

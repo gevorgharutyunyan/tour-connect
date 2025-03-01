@@ -62,17 +62,30 @@ def review_detail(request, review_id):
 
 @login_required
 def add_to_wishlist(request, tour_id):
-    tour = get_object_or_404(Tour, pk=tour_id)
-    wishlist_item, created = Wishlist.objects.get_or_create(tourist=request.user, tour=tour)
-    if created:
-        # Optionally, you can add a message here
-        messages.success(request, f"Added {tour.title} to your wishlist!")
-    else:
-        messages.info(request, f"{tour.title} is already in your wishlist!")
-    return redirect('home')  # Redirect back to the home page
+    if request.method == 'POST':
+        tour = get_object_or_404(Tour, pk=tour_id)
+        wishlist_item, created = Wishlist.objects.get_or_create(
+            tourist=request.user,
+            tour=tour
+        )
+        if created:
+            messages.success(request, f"Added {tour.title} to your wishlist!")
+        else:
+            messages.info(request, f"{tour.title} is already in your wishlist!")
+        return redirect(request.META.get('HTTP_REFERER', 'home'))
+    return redirect('home')
+
+@login_required
+def remove_from_wishlist(request, tour_id):
+    if request.method == 'POST':
+        tour = get_object_or_404(Tour, pk=tour_id)
+        Wishlist.objects.filter(tourist=request.user, tour=tour).delete()
+        messages.success(request, f"Removed {tour.title} from your wishlist!")
+        return redirect(request.META.get('HTTP_REFERER', 'reviews:view_wishlist'))
+    return redirect('reviews:view_wishlist')
 
 @login_required
 def view_wishlist(request):
-    wishlist_items = Wishlist.objects.filter(tourist=request.user)
+    wishlist_items = Wishlist.objects.filter(tourist=request.user).select_related('tour', 'tour__guide', 'tour__location')
     return render(request, 'reviews/wishlist.html', {'wishlist_items': wishlist_items})
 

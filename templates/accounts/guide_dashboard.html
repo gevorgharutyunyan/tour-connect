@@ -1,77 +1,187 @@
-{% extends 'base.html' %}  {% block title %}Guide Dashboard{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Guide Dashboard{% endblock %}
 
 {% block content %}
-    <h1>Welcome to Your Guide Dashboard, {{ user.username }}!</h1>
+<!-- Welcome Banner -->
+<div style="background: linear-gradient(to right, var(--primary-color), #1565C0); color: white; margin: -2rem -2rem 2rem -2rem; padding: 2rem;">
+    <div class="container" style="max-width: 1200px; margin: 0 auto;">
+        <h1 style="font-size: 2rem; margin-bottom: 1rem;">Welcome back, {{ user.get_full_name|default:user.username }}!</h1>
+        <p style="opacity: 0.9;">Manage your tours, bookings, and connect with tourists.</p>
+    </div>
+</div>
 
-    <h2>Your Listed Tours</h2>
-    {% if tours %}  <ul>
+<!-- Quick Stats -->
+<div class="dashboard-grid" style="margin-bottom: 2rem;">
+    <div class="dashboard-card">
+        <i class="fas fa-map-marked-alt" style="font-size: 2rem; color: var(--primary-color);"></i>
+        <div class="stat-number">{{ tours.count }}</div>
+        <p>Active Tours</p>
+    </div>
+    <div class="dashboard-card">
+        <i class="fas fa-calendar-check" style="font-size: 2rem; color: var(--primary-color);"></i>
+        <div class="stat-number">{{ booking_requests.count }}</div>
+        <p>Booking Requests</p>
+    </div>
+    <div class="dashboard-card">
+        <i class="fas fa-envelope" style="font-size: 2rem; color: var(--primary-color);"></i>
+        <div class="stat-number">{{ unread_messages_count }}</div>
+        <p>Unread Messages</p>
+    </div>
+    <div class="dashboard-card">
+        <i class="fas fa-star" style="font-size: 2rem; color: var(--primary-color);"></i>
+        <div class="stat-number">{{ reviews.count }}</div>
+        <p>Total Reviews</p>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card" style="margin-bottom: 2rem;">
+    <h2 style="margin-top: 0; margin-bottom: 1rem;">Quick Actions</h2>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="{% url 'accounts:profile' %}" class="btn btn-primary">
+            <i class="fas fa-user-edit"></i> Edit Profile
+        </a>
+        <a href="{% url 'tours:create-tour' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> Create Tour
+        </a>
+        <a href="{% url 'bookings:booking_requests' %}" class="btn btn-primary">
+            <i class="fas fa-calendar-alt"></i> Booking Requests
+        </a>
+        <a href="{% url 'messaging:inbox' %}" class="btn btn-primary">
+            <i class="fas fa-envelope"></i> Messages
+        </a>
+    </div>
+</div>
+
+<!-- Your Tours -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="margin: 0;">Your Tours</h2>
+        <a href="{% url 'tours:create-tour' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Tour
+        </a>
+    </div>
+
+    {% if tours %}
+        <div class="tour-grid">
             {% for tour in tours %}
-                <li>
-                    <h3><a href="{% url 'tours:tour-detail' tour.pk %}">{{ tour.title }}</a></h3>
-                    <p>{{ tour.description }}</p>
-                    <p>Price: {{ tour.price }}</p>
-                    <a href="{% url 'tours:tour-update' tour.pk %}">Edit Tour</a> |
-                    <a href="{% url 'tours:tour-delete' tour.pk %}">Delete Tour</a> |
-                    <a href="{% url 'tours:tourdate-add' tour.id %}">Add Date</a> |
-                    <a href="{% url 'tours:tourimage-add' tour.id %}">Add Image</a>
-                    <ul>
-                        {% for image in tour.images.all %}
-                            <img src="{{ image.image.url }}" alt="{{ image.caption }}" width="200">
-                        {% endfor %}
-                    </ul>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>You haven't listed any tours yet. <a href="{% url 'tours:create-tour' %}">Create a new tour</a>!</p>
-    {% endif %}
-
-    <h2>Booking Requests</h2>
-    {% if booking_requests %}
-        <ul>
-            {% for booking in booking_requests %}
-                <li>
-                    <p>Tourist: {{ booking.tourist }}</p>
-                    <p>Tour: {{ booking.tour_date.tour.title }}</p>
-                    <p>Date: {{ booking.tour_date.start_date }}</p>
-                    <p>Participants: {{ booking.number_of_participants }}</p>
-                    <p>Status: {{ booking.status }}</p>
-                    {% if booking.status == 'pending' %}
-                        <a href="{% url 'bookings:confirm_booking' booking.pk %}">Confirm</a> |
-                        <a href="{% url 'bookings:cancel_booking' booking.pk %}">Cancel</a>
+                <div class="tour-card">
+                    {% if tour.images.first %}
+                        <img src="{{ tour.images.first.image.url }}" alt="{{ tour.title }}" class="tour-image">
                     {% endif %}
-                </li>
+                    <div class="tour-content">
+                        <h3 class="tour-title">{{ tour.title }}</h3>
+                        <p style="color: #666; margin-bottom: 1rem;">{{ tour.description|truncatewords:20 }}</p>
+                        <p style="color: var(--primary-color); font-weight: bold; margin-bottom: 1rem;">${{ tour.price }}</p>
+                        
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="{% url 'tours:tour-update' tour.pk %}" class="btn btn-primary" style="flex: 1;">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="{% url 'tours:tourdate-add' tour.id %}" class="btn btn-secondary" style="flex: 1;">
+                                <i class="fas fa-calendar-plus"></i> Add Date
+                            </a>
+                            <a href="{% url 'tours:tourimage-add' tour.id %}" class="btn btn-secondary" style="flex: 1;">
+                                <i class="fas fa-image"></i> Add Image
+                            </a>
+                            <a href="{% url 'tours:tour-delete' tour.pk %}" class="btn btn-danger" style="flex: 1;">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% else %}
-        <p>No new booking requests.</p>
+        <div style="text-align: center; padding: 2rem;">
+            <i class="fas fa-map-marked-alt" style="font-size: 3rem; color: var(--border-color); margin-bottom: 1rem;"></i>
+            <p>You haven't listed any tours yet.</p>
+            <a href="{% url 'tours:create-tour' %}" class="btn btn-primary">Create Your First Tour</a>
+        </div>
     {% endif %}
+</div>
 
-    <h2>Messages</h2>
-    <p>You have {{ unread_messages_count }} unread messages.</p>
-    <a href="{% url 'messaging:inbox' %}">View Messages</a>
+<!-- Recent Booking Requests -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="margin: 0;">Recent Booking Requests</h2>
+        <a href="{% url 'bookings:booking_requests' %}" class="btn btn-primary">View All</a>
+    </div>
 
-    <h2>Reviews</h2>
+    {% if booking_requests %}
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+            {% for booking in booking_requests|slice:":5" %}
+                <div class="card" style="margin-bottom: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <h3 style="margin-top: 0;">{{ booking.tour_date.tour.title }}</h3>
+                        <span class="badge" style="background-color: {% if booking.status == 'pending' %}#ff9800{% elif booking.status == 'confirmed' %}var(--secondary-color){% else %}var(--danger-color){% endif %}; color: white; padding: 0.25rem 0.75rem; border-radius: 20px;">
+                            {{ booking.status|title }}
+                        </span>
+                    </div>
+                    
+                    <div style="margin: 1rem 0;">
+                        <p><i class="fas fa-user"></i> {{ booking.tourist.get_full_name|default:booking.tourist.username }}</p>
+                        <p><i class="far fa-calendar-alt"></i> {{ booking.tour_date.start_date|date:"M d, Y" }}</p>
+                        <p><i class="fas fa-users"></i> {{ booking.number_of_participants }} participants</p>
+                    </div>
+                    
+                    {% if booking.status == 'pending' %}
+                        <div style="display: flex; gap: 0.5rem;">
+                            <a href="{% url 'bookings:confirm_booking' booking.id %}" class="btn btn-secondary" style="flex: 1;">
+                                <i class="fas fa-check"></i> Confirm
+                            </a>
+                            <a href="{% url 'bookings:cancel_booking' booking.id %}" class="btn btn-danger" style="flex: 1;">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 2rem;">
+            <i class="far fa-calendar-alt" style="font-size: 3rem; color: var(--border-color); margin-bottom: 1rem;"></i>
+            <p>No booking requests at the moment.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Recent Reviews -->
+<div class="card">
+    <h2 style="margin-top: 0; margin-bottom: 1rem;">Recent Reviews</h2>
+    
     {% if reviews %}
-        <ul>
-            {% for review in reviews %}
-                <li>
-                    <p>Tourist: {{ review.booking.tourist }}</p>
-                    <p>Rating: {{ review.rating }}</p>
-                    <p>Comment: {{ review.comment }}</p>
-                </li>
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+            {% for review in reviews|slice:":5" %}
+                <div class="review-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span><i class="fas fa-user"></i> {{ review.booking.tourist.get_full_name|default:review.booking.tourist.username }}</span>
+                        <div class="rating">
+                            {% for i in "12345"|make_list %}
+                                <i class="fas fa-star" style="color: {% if forloop.counter <= review.rating %}#ffc107{% else %}#ddd{% endif %};"></i>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <p style="margin: 0;">{{ review.comment }}</p>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% else %}
-        <p>No reviews yet.</p>
+        <div style="text-align: center; padding: 2rem;">
+            <i class="far fa-star" style="font-size: 3rem; color: var(--border-color); margin-bottom: 1rem;"></i>
+            <p>No reviews yet.</p>
+        </div>
     {% endif %}
-    <a href="{% url 'accounts:logout' %}">Logout</a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-  // Prevent back navigation after logout
-  window.onpageshow = function(event) {
+// Prevent back navigation after logout
+window.onpageshow = function(event) {
     if (event.persisted) {
-      window.location.reload();
+        window.location.reload();
     }
-  };
+};
 </script>
 {% endblock %}

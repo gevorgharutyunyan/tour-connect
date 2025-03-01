@@ -1,19 +1,116 @@
 {% extends "accounts/base_profile.html" %}
 
 {% block extra_content %}
-<div class="verification-section">
-    <h3>Guide Verification</h3>
+<!-- Professional Information -->
+<div class="form-group">
+    <h4 style="margin-bottom: 1rem;"><i class="fas fa-briefcase"></i> Professional Information</h4>
+    
+    <div class="form-group">
+        <label>Years of Experience</label>
+        {{ form.years_of_experience }}
+    </div>
+
+    <div class="form-group">
+        <label>Languages</label>
+        {{ form.languages }}
+        <small class="form-text text-muted">Select all languages you can guide tours in</small>
+    </div>
+
+    <div class="form-group">
+        <label>Specialties</label>
+        {{ form.specialties }}
+        <small class="form-text text-muted">Select your areas of expertise</small>
+    </div>
+
+    <div class="form-group">
+        <label>Guide License Number</label>
+        {{ form.license_number }}
+        <small class="form-text text-muted">If applicable in your region</small>
+    </div>
+</div>
+
+<!-- Verification Documents -->
+<div class="form-group">
+    <h4 style="margin-bottom: 1rem;"><i class="fas fa-shield-alt"></i> Account Verification</h4>
+    
     {% if profile.is_verified %}
-    <div class="alert alert-success">
-        Your guide account is verified
+    <div class="alert alert-success" style="display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fas fa-check-circle"></i>
+        Your account is verified
     </div>
     {% else %}
-    <div class="alert alert-warning">
-        Please upload your verification documents to complete the verification process
+    <div class="alert alert-warning" style="display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fas fa-exclamation-triangle"></i>
+        Your account is pending verification
+    </div>
+
+    <div class="form-group">
+        <label>ID Document</label>
+        {{ form.id_document }}
+        <small class="form-text text-muted">Upload a clear photo of your government-issued ID</small>
+    </div>
+
+    <div class="form-group">
+        <label>Guide License</label>
+        {{ form.guide_license }}
+        <small class="form-text text-muted">Upload your tour guide license (if applicable)</small>
+    </div>
+
+    <div class="form-group">
+        <label>Additional Certifications</label>
+        {{ form.certifications }}
+        <small class="form-text text-muted">Upload any relevant certifications (First Aid, Language, etc.)</small>
     </div>
     {% endif %}
 </div>
-    <script>
+
+<!-- Tour Preferences -->
+<div class="form-group">
+    <h4 style="margin-bottom: 1rem;"><i class="fas fa-map-marked-alt"></i> Tour Preferences</h4>
+    
+    <div class="form-group">
+        <label>Maximum Group Size</label>
+        {{ form.max_group_size }}
+    </div>
+
+    <div class="form-group">
+        <label>Preferred Tour Types</label>
+        {{ form.preferred_tour_types }}
+    </div>
+
+    <div class="form-group">
+        <label>Areas Covered</label>
+        {{ form.areas_covered }}
+        <small class="form-text text-muted">Select the regions where you offer tours</small>
+    </div>
+</div>
+
+<!-- Bank Information -->
+<div class="form-group">
+    <h4 style="margin-bottom: 1rem;"><i class="fas fa-university"></i> Payment Information</h4>
+    
+    <div class="form-group">
+        <label>Bank Account Name</label>
+        {{ form.bank_account_name }}
+    </div>
+
+    <div class="form-group">
+        <label>Bank Account Number</label>
+        {{ form.bank_account_number }}
+    </div>
+
+    <div class="form-group">
+        <label>Bank Name</label>
+        {{ form.bank_name }}
+    </div>
+
+    <div class="form-group">
+        <label>Bank Branch</label>
+        {{ form.bank_branch }}
+    </div>
+</div>
+
+<script>
   // Prevent back navigation after logout
   window.onpageshow = function(event) {
     if (event.persisted) {

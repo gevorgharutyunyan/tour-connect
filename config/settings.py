@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'social_django',  # Add this line
     'django_countries',
+    'widget_tweaks',  # Add widget_tweaks
     'apps.accounts',
     'apps.common',
     'apps.tours',

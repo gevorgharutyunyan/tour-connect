@@ -1,23 +1,259 @@
-<h2>Conversation with {{ other_user.username }}</h2>
+{% extends 'base.html' %}
 
-<div id="message-container">
-  {% for message in messages %}
-    <p><strong>{{ message.sender.username }}:</strong> {{ message.content }}</p>
-  {% endfor %}
+{% block content %}
+<div class="messaging-container">
+    <!-- Header -->
+    <div class="chat-header">
+        <div class="chat-header-content">
+            <a href="{% url 'messaging:inbox' %}" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="user-info">
+                <h2>{{ other_user.get_full_name|default:other_user.username }}</h2>
+                <small>
+                    {% if other_user.user_type == 'guide' %}Tour Guide{% else %}Tourist{% endif %}
+                    <span class="message-count">({{ chat_messages.count }} messages)</span>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div id="message-container" class="messages-container">
+        {% for message in chat_messages %}
+            <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+                <div class="message-content">
+                    {{ message.content }}
+                </div>
+                <div class="message-time">
+                    {{ message.created_at|date:"g:i A" }}
+                </div>
+            </div>
+        {% empty %}
+            <div class="no-messages">
+                <i class="far fa-comments"></i>
+                <p>No messages yet. Start the conversation!</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Message Form -->
+    <form method="post" id="message-form" class="message-form">
+        {% csrf_token %}
+        <div class="input-container">
+            {{ form.content }}
+        </div>
+        <button type="submit" class="send-button">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </form>
 </div>
 
-<form method="post" id="message-form">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Send</button>
-</form>
+<style>
+    .messaging-container {
+        position: fixed;
+        top: 60px; /* Adjust based on your navbar height */
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        background-color: #f8f9fa;
+    }
+
+    .chat-header {
+        padding: 1rem;
+        background: white;
+        border-bottom: 1px solid #ddd;
+        z-index: 10;
+    }
+
+    .chat-header-content {
+        max-width: 800px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .back-button {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .user-info h2 {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+
+    .user-info small {
+        color: #666;
+    }
+
+    .message-count {
+        margin-left: 0.5rem;
+        color: #999;
+    }
+
+    .messages-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        max-width: 800px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .message {
+        margin-bottom: 1rem;
+        max-width: 70%;
+        clear: both;
+    }
+
+    .message.sent {
+        float: right;
+    }
+
+    .message.received {
+        float: left;
+    }
+
+    .message-content {
+        padding: 0.8rem 1.2rem;
+        border-radius: 1rem;
+        display: inline-block;
+        word-wrap: break-word;
+        max-width: 100%;
+    }
+
+    .sent .message-content {
+        background: var(--primary-color);
+        color: white;
+        border-bottom-right-radius: 0.3rem;
+    }
+
+    .received .message-content {
+        background: white;
+        border-bottom-left-radius: 0.3rem;
+    }
+
+    .message-time {
+        font-size: 0.8rem;
+        color: #666;
+        margin-top: 0.3rem;
+        text-align: right;
+    }
+
+    .received .message-time {
+        text-align: left;
+    }
+
+    .no-messages {
+        text-align: center;
+        color: #666;
+        padding: 2rem;
+    }
+
+    .no-messages i {
+        font-size: 3rem;
+        color: #ccc;
+        margin-bottom: 1rem;
+    }
+
+    .message-form {
+        padding: 1rem;
+        background: white;
+        border-top: 1px solid #ddd;
+        display: flex;
+        gap: 1rem;
+        max-width: 800px;
+        margin: 0 auto;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .input-container {
+        flex: 1;
+    }
+
+    #id_content {
+        width: 100%;
+        padding: 0.8rem;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        resize: none;
+        font-family: inherit;
+        font-size: 1rem;
+        line-height: 1.5;
+        height: 45px;
+        max-height: 120px;
+    }
+
+    #id_content:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+    }
+
+    .send-button {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .send-button:hover {
+        background-color: var(--primary-color-dark);
+    }
+
+    @media (max-width: 768px) {
+        .messaging-container {
+            top: 56px; /* Adjust for mobile navbar height */
+        }
+
+        .messages-container {
+            padding: 0.5rem;
+        }
+
+        .message {
+            max-width: 85%;
+        }
+
+        .message-form {
+            padding: 0.8rem;
+        }
+    }
+</style>
 
 <script>
-    // Enter key message submit script
+    // Scroll to bottom of messages
+    function scrollToBottom() {
+        const container = document.getElementById('message-container');
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
+        scrollToBottom();
+        
         const messageForm = document.getElementById('message-form');
         const contentTextarea = messageForm.querySelector('textarea[name="content"]');
 
+        // Auto-resize textarea
+        contentTextarea.addEventListener('input', function() {
+            this.style.height = '45px';
+            const newHeight = Math.min(this.scrollHeight, 120);
+            this.style.height = newHeight + 'px';
+        });
+
+        // Submit on Enter (without shift)
         contentTextarea.addEventListener('keydown', function(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
@@ -26,5 +262,16 @@
                 }
             }
         });
+
+        // Focus on textarea
+        contentTextarea.focus();
+    });
+
+    // Scroll to bottom when new messages arrive
+    const observer = new MutationObserver(scrollToBottom);
+    observer.observe(document.getElementById('message-container'), {
+        childList: true,
+        subtree: true
     });
 </script>
+{% endblock %}

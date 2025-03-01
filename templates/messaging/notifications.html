@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="notifications-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Your Notifications</h2>
+        {% if notifications %}
+            <a href="{% url 'messaging:mark_all_notifications_read' %}" 
+               style="text-decoration: none; color: #2196F3;">
+                Mark All as Read
+            </a>
+        {% endif %}
+    </div>
+
+    {% if notifications %}
+        <div class="notifications-list">
+            {% for notification in notifications %}
+                <div class="notification-item" 
+                     style="padding: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; 
+                            {% if not notification.is_read %}background-color: #f8f9fa;{% endif %}">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h3 style="margin: 0; color: #333;">{{ notification.title }}</h3>
+                            <p style="margin: 10px 0;">{{ notification.message }}</p>
+                            <small style="color: #666;">{{ notification.created_at|date:"F d, Y H:i" }}</small>
+                        </div>
+                        {% if not notification.is_read %}
+                            <form method="post" action="{% url 'messaging:mark_notification_read' notification.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        style="background: none; border: none; color: #2196F3; cursor: pointer;">
+                                    Mark as Read
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+
+                    {% if notification.type == 'message' %}
+                        <div style="margin-top: 10px;">
+                            <a href="{% url 'messaging:conversation_view' notification.related_object_id %}"
+                               style="text-decoration: none; color: #2196F3;">
+                                View Conversation
+                            </a>
+                        </div>
+                    {% elif notification.type == 'booking' %}
+                        <div style="margin-top: 10px;">
+                            {% if user.user_type == 'guide' %}
+                                <a href="{% url 'bookings:booking_requests' %}"
+                                   style="text-decoration: none; color: #2196F3;">
+                                    View Booking Requests
+                                </a>
+                            {% else %}
+                                <a href="{% url 'bookings:booking_detail' notification.related_object_id %}"
+                                   style="text-decoration: none; color: #2196F3;">
+                                    View Booking Details
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No notifications yet.</p>
+    {% endif %}
+</div>
+
+<script>
+    // Function to mark notification as read via AJAX
+    function markAsRead(notificationId) {
+        fetch(`/messaging/notifications/${notificationId}/mark-read/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => response.json())
+          .then(data => {
+              if (data.status === 'success') {
+                  // Update UI to show notification as read
+                  const notificationElement = document.querySelector(`#notification-${notificationId}`);
+                  if (notificationElement) {
+                      notificationElement.style.backgroundColor = 'white';
+                      const markReadButton = notificationElement.querySelector('.mark-read-button');
+                      if (markReadButton) {
+                          markReadButton.style.display = 'none';
+                      }
+                  }
+              }
+          });
+    }
+
+    // Function to mark all notifications as read via AJAX
+    function markAllAsRead() {
+        fetch('/messaging/notifications/mark-all-read/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => response.json())
+          .then(data => {
+              if (data.status === 'success') {
+                  // Update UI to show all notifications as read
+                  document.querySelectorAll('.notification-item').forEach(item => {
+                      item.style.backgroundColor = 'white';
+                  });
+                  document.querySelectorAll('.mark-read-button').forEach(button => {
+                      button.style.display = 'none';
+                  });
+              }
+          });
+    }
+</script>
+{% endblock %} 

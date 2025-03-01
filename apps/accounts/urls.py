@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (UserTypeView, RegistrationView, CustomLoginView, profile_view, guide_dashboard,
-                    google_select_user_type,password_reset_confirm,password_reset_request)
+                    google_select_user_type,password_reset_confirm,password_reset_request,
+                    tourist_dashboard)
 
 from django.contrib.auth.views import LogoutView
 
@@ -17,4 +18,5 @@ urlpatterns = [
     path('password-reset/', password_reset_request, name='password_reset_request'),
     path('password-reset-confirm/<str:uidb64>/<str:token>/', password_reset_confirm,
          name='password_reset_confirm'),
+    path('tourist/dashboard/', tourist_dashboard, name='tourist_dashboard'),
 ]

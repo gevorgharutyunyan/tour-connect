@@ -1,17 +1,65 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mx-auto mt-8 max-w-md">
-    <h2 class="text-2xl font-bold mb-6">Create New Account</h2>
-    <form method="post" class="space-y-4">
-        {% csrf_token %}
-        <div class="space-y-2">
-            {{ form.user_type }}
-        </div>
-        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Continue</button>
-    </form>
-    <p class="mt-4">
-        Already have an account? <a href="{% url 'accounts:login' %}" class="text-blue-500">Login here</a>
-    </p>
+<div style="max-width: 600px; margin: 2rem auto; padding: 2rem;">
+    <div class="card">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Choose Your Role</h2>
+        <p style="text-align: center; color: #666; margin-bottom: 2rem;">
+            Select how you want to use TourConnect. You can be either a tourist looking for amazing experiences
+            or a guide ready to share your expertise.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="dashboard-grid" style="grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+                <label class="dashboard-card" style="cursor: pointer; text-align: center; transition: all 0.3s ease;">
+                    <input type="radio" name="user_type" value="tourist" style="display: none;">
+                    <i class="fas fa-suitcase" style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h3>Tourist</h3>
+                    <p style="color: #666;">Discover and book amazing tours with local guides</p>
+                    <div class="btn btn-primary" style="margin-top: 1rem;">Choose Tourist</div>
+                </label>
+
+                <label class="dashboard-card" style="cursor: pointer; text-align: center; transition: all 0.3s ease;">
+                    <input type="radio" name="user_type" value="guide" style="display: none;">
+                    <i class="fas fa-map-marked-alt" style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h3>Guide</h3>
+                    <p style="color: #666;">Share your expertise and host amazing tours</p>
+                    <div class="btn btn-primary" style="margin-top: 1rem;">Choose Guide</div>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                Continue
+            </button>
+        </form>
+
+        <p style="text-align: center; margin-top: 1.5rem;">
+            Already have an account? 
+            <a href="{% url 'accounts:login' %}" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
+                Login here
+            </a>
+        </p>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        // Reset all cards
+        document.querySelectorAll('.dashboard-card').forEach(card => {
+            card.style.borderColor = 'var(--border-color)';
+            card.style.transform = 'none';
+        });
+        
+        // Style selected card
+        if (this.checked) {
+            this.closest('.dashboard-card').style.borderColor = 'var(--primary-color)';
+            this.closest('.dashboard-card').style.transform = 'translateY(-4px)';
+        }
+    });
+});
+</script>
 {% endblock %}

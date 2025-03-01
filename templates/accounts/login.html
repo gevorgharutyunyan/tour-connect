@@ -1,67 +1,98 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load widget_tweaks %}
 
 {% block content %}
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}">
-
-<body>
-<div class="main-container">
-    <!-- Image on the Right Side -->
-    <div class="image-section"></div>
-
-    <!-- Login Form -->
-    <div class="form-section">
-        <div class="form-content">
-            <h2>Sign In</h2>
-            <form method="post">
-                {% csrf_token %}
-                <div class="styled-form">
-                    {{ form.username.label_tag }}
-                    {{ form.username }}
-                    <p class="password-container">
-                        {{ form.password.label_tag }}
-                        {{ form.password }}
-                        <span class="toggle-password" onclick="togglePassword()">👁️</span>
-                    </p>
+<div style="max-width: 400px; margin: 2rem auto; padding: 2rem;">
+    <div class="card">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Welcome Back</h2>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}" style="display: block; margin-bottom: 0.5rem;">
+                    <i class="fas fa-user"></i> Username
+                </label>
+                {{ form.username|add_class:"form-control" }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}" style="display: block; margin-bottom: 0.5rem;">
+                    <i class="fas fa-lock"></i> Password
+                </label>
+                <div style="position: relative;">
+                    {{ form.password|add_class:"form-control" }}
+                    <button type="button" onclick="togglePassword()" 
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+                                   background: none; border: none; cursor: pointer;">
+                        <i class="far fa-eye"></i>
+                    </button>
                 </div>
-                <div class="remember-forgot">
-                    <label><input type="checkbox" name="remember"> Remember</label>
-                    <a href="{% url 'accounts:password_reset_request' %}">Forgot password?</a>
-                </div>
-                <button type="submit" class="btn">Sign In</button>
-            </form>
-           <div class="social-login">
-                <p>Or sign in with:</p>
-                <a href="{% url 'social:begin' 'google-oauth2' %}" class="google-btn">
-                    <img src="{% static 'img/google-icon.png' %}" alt="Google Icon">
-                    Sign in with Google
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 1rem 0;">
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" name="remember">
+                    <span>Remember me</span>
+                </label>
+                <a href="{% url 'accounts:password_reset_request' %}" style="color: var(--primary-color); text-decoration: none;">
+                    Forgot password?
                 </a>
             </div>
-            <div class="register">
-                <p>Don't have an account? <a href="{% url 'accounts:select_user_type' %}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Register</a></p>
-            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+        </form>
+        
+        <div style="text-align: center; margin: 1.5rem 0; position: relative;">
+            <hr style="margin: 0; border: none; border-top: 1px solid var(--border-color);">
+            <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                        background: white; padding: 0 1rem; color: #666;">
+                or continue with
+            </span>
         </div>
+        
+        <a href="{% url 'social:begin' 'google-oauth2' %}" class="btn" 
+           style="width: 100%; background: white; border: 1px solid var(--border-color); 
+                  color: var(--text-color); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <img src="{% static 'img/google-icon.png' %}" alt="Google" style="width: 18px; height: 18px;">
+            Sign in with Google
+        </a>
+        
+        <p style="text-align: center; margin-top: 1.5rem;">
+            Don't have an account? 
+            <a href="{% url 'accounts:select_user_type' %}" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
+                Register
+            </a>
+        </p>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 function togglePassword() {
-    let passwordInput = document.querySelector('.password-container input');
-    let type = passwordInput.type === 'password' ? 'text' : 'password';
-    passwordInput.type = type;
-}
-</script>
-
-</body>
-    <script>
-  // Prevent back navigation after logout
-  window.onpageshow = function(event) {
-    if (event.persisted) {
-      window.location.reload();
+    const passwordInput = document.querySelector('#{{ form.password.id_for_label }}');
+    const eyeIcon = document.querySelector('.fa-eye');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.classList.remove('far');
+        eyeIcon.classList.add('fas');
+    } else {
+        passwordInput.type = 'password';
+        eyeIcon.classList.remove('fas');
+        eyeIcon.classList.add('far');
     }
-  };
+}
+
+// Prevent back navigation after logout
+window.onpageshow = function(event) {
+    if (event.persisted) {
+        window.location.reload();
+    }
+};
 </script>
 {% endblock %}

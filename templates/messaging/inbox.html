@@ -1,18 +1,77 @@
-<h2>Inbox</h2>
-<ol>
-    {% for item in conversation_data %}
-        {% if item.last_message %}  <li>
-            <a href="{% url 'messaging:conversation_view' item.conversation.id %}">
-                {% if item.other_user_username %}
-                    <strong>{{ item.other_user_username }}</strong>
-                    <p>
-                        {{ item.last_message.content }}
-                    </p>
-                {% else %}
-                    <span class="no-participant">(No other participant)</span>
-                {% endif %}
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="messaging-container" style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2 style="margin: 0;">Messages</h2>
+        <div class="message-actions">
+            <a href="{% url 'home' %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Back to Home
             </a>
-        </li>
-        {% endif %}
-    {% endfor %}
-</ol>
+        </div>
+    </div>
+
+    <div class="conversation-list">
+        {% for item in conversation_data %}
+            {% if item.last_message %}
+                <a href="{% url 'messaging:conversation_view' item.conversation.id %}" class="conversation-item" 
+                   style="display: block; padding: 1rem; background: white; border-radius: 8px; margin-bottom: 1rem; 
+                          text-decoration: none; color: inherit; box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+                          transition: transform 0.2s, box-shadow 0.2s;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="avatar" style="width: 50px; height: 50px; background: var(--primary-color); 
+                                                  border-radius: 50%; display: flex; align-items: center; 
+                                                  justify-content: center; color: white;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            {% if item.other_user_username %}
+                                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                    <strong style="font-size: 1.1rem;">{{ item.other_user_username }}</strong>
+                                    <small style="color: #666;">
+                                        {{ item.last_message.created_at|timesince }} ago
+                                    </small>
+                                </div>
+                                <p style="margin: 0.5rem 0 0 0; color: #666; overflow: hidden; 
+                                          text-overflow: ellipsis; white-space: nowrap;">
+                                    {{ item.last_message.content }}
+                                </p>
+                            {% else %}
+                                <span class="no-participant" style="color: #666;">(No other participant)</span>
+                            {% endif %}
+                        </div>
+                        <div class="conversation-arrow" style="color: #ccc;">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </a>
+            {% endif %}
+        {% empty %}
+            <div style="text-align: center; padding: 3rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <i class="far fa-comments" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                <p style="margin: 0; color: #666;">No messages yet</p>
+                <a href="{% url 'tours:tour-list' %}" class="btn btn-primary" style="margin-top: 1rem;">
+                    Browse Tours to Message Guides
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .conversation-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .conversation-item:active {
+        transform: translateY(0);
+    }
+    
+    @media (max-width: 768px) {
+        .messaging-container {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}

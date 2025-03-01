@@ -2,9 +2,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
+from django.db.models import Q
 from apps.common.models import Language, Location
-from .forms import TourForm, TourDateForm, TourImageForm, TourDateFormSet
+from .forms import TourForm, TourDateForm, TourImageForm, TourDateFormSet, TourFilterForm
 from .models import Tour, TourDate, TourImage
+from apps.reviews.models import Wishlist
+from django.utils import timezone
 
 
 # ✅ Tour Views
@@ -14,22 +17,59 @@ class TourListView(ListView):
     template_name = 'tours/tour_list.html'
     context_object_name = 'tours'
     ordering = ['-created_at']
+    paginate_by = 12  # Show 12 tours per page
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter_form'] = TourFilterForm(self.request.GET)
+        
+        # Add query parameters to pagination links
+        if self.request.GET:
+            query = self.request.GET.copy()
+            if 'page' in query:
+                del query['page']
+            context['query_params'] = query.urlencode()
+        
+        return context
 
     def get_queryset(self):
-        queryset = Tour.objects.filter(is_active=True)
+        queryset = Tour.objects.filter(
+            is_active=True,
+            dates__start_date__gte=timezone.now()
+        ).distinct()
+        
+        form = TourFilterForm(self.request.GET)
 
+        # Basic search query
         if 'q' in self.request.GET:
             query = self.request.GET.get('q')
-            queryset = queryset.filter(title__icontains=query)
+            queryset = queryset.filter(
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(location__name__icontains=query)
+            )
 
+        # Date range filter
         if 'start_date' in self.request.GET and 'end_date' in self.request.GET:
             start_date = self.request.GET.get('start_date')
             end_date = self.request.GET.get('end_date')
             if start_date and end_date:
-                # Filter tours with dates within the specified range
-                queryset = queryset.filter(dates__start_date__range=[start_date, end_date]).distinct()
+                queryset = queryset.filter(dates__start_date__range=[start_date, end_date])
 
-        return queryset
+        if form.is_valid():
+            # Price range filter
+            if form.cleaned_data.get('min_price'):
+                queryset = queryset.filter(price__gte=form.cleaned_data['min_price'])
+            if form.cleaned_data.get('max_price'):
+                queryset = queryset.filter(price__lte=form.cleaned_data['max_price'])
+
+            # Participants range filter
+            if form.cleaned_data.get('min_participants'):
+                queryset = queryset.filter(max_participants__gte=form.cleaned_data['min_participants'])
+            if form.cleaned_data.get('max_participants'):
+                queryset = queryset.filter(max_participants__lte=form.cleaned_data['max_participants'])
+
+        return queryset.select_related('guide', 'location').prefetch_related('images', 'dates')
 
 
 # DETAIL VIEW: Show single tour details
@@ -37,6 +77,15 @@ class TourDetailView(DetailView):
     model = Tour
     template_name = 'tours/tour_detail.html'
     context_object_name = 'tour'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated:
+            context['is_in_wishlist'] = Wishlist.objects.filter(
+                tourist=self.request.user,
+                tour=self.object
+            ).exists()
+        return context
 
 
 # Mixin to restrict actions only for guides

@@ -5,6 +5,9 @@ from.forms import BookingForm, PaymentForm
 from apps.tours.models import TourDate, Tour
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
+from django.contrib.auth.decorators import login_required, user_passes_test
+from apps.messaging.utils import create_booking_notification
+from django.contrib import messages
 
 @login_required
 def create_booking(request, tour_date_id):
@@ -25,6 +28,10 @@ def create_booking(request, tour_date_id):
                 payment = payment_form.save(commit=False)
                 payment.booking = booking
                 payment.save()
+
+                # Create notification for the guide
+                create_booking_notification(booking)
+
                 return redirect('bookings:booking_detail', booking.id)  # Redirect to booking detail page
     else:
         booking_form = BookingForm()
@@ -43,6 +50,10 @@ def confirm_booking(request, booking_id):
     booking = get_object_or_404(Booking, pk=booking_id)
     booking.status = 'confirmed'
     booking.save()
+    
+    # Create notification for the tourist
+    create_booking_notification(booking)
+    
     return redirect('accounts:guide_dashboard')  # Redirect back to the guide dashboard
 
 @login_required
@@ -50,6 +61,10 @@ def cancel_booking(request, booking_id):
     booking = get_object_or_404(Booking, pk=booking_id)
     booking.status = 'cancelled'
     booking.save()
+    
+    # Create notification for the tourist
+    create_booking_notification(booking)
+    
     return redirect('accounts:guide_dashboard')
 
 class BookingListView(LoginRequiredMixin, ListView):
@@ -59,3 +74,44 @@ class BookingListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return Booking.objects.filter(tourist=self.request.user)
+
+def is_guide(user):
+    return user.is_authenticated and user.user_type == 'guide'
+
+@login_required
+@user_passes_test(is_guide)
+def booking_requests(request):
+    booking_requests = Booking.objects.filter(
+        tour_date__tour__guide=request.user
+    ).select_related(
+        'tourist',
+        'tour_date__tour'
+    ).order_by('-booking_date')
+
+    return render(request, 'bookings/booking_requests.html', {
+        'booking_requests': booking_requests
+    })
+
+@login_required
+@user_passes_test(is_guide)
+def complete_booking(request, booking_id):
+    booking = get_object_or_404(Booking, pk=booking_id)
+    
+    # Verify that the guide owns this tour
+    if booking.tour_date.tour.guide != request.user:
+        messages.error(request, "You don't have permission to complete this booking.")
+        return redirect('accounts:guide_dashboard')
+    
+    # Only confirmed bookings can be completed
+    if booking.status != 'confirmed':
+        messages.error(request, "Only confirmed bookings can be marked as completed.")
+        return redirect('accounts:guide_dashboard')
+    
+    booking.status = 'completed'
+    booking.save()
+    
+    # Create notification for the tourist
+    create_booking_notification(booking)
+    
+    messages.success(request, f"Tour marked as completed. The tourist can now leave a review.")
+    return redirect('accounts:guide_dashboard')

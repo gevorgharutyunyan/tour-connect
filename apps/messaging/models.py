@@ -20,6 +20,12 @@ class Message(models.Model):
     is_read = models.BooleanField(default=False)
     read_at = models.DateTimeField(null=True, blank=True)
 
+    def __str__(self):
+        return self.content[:50] + ('...' if len(self.content) > 50 else '')
+
+    class Meta:
+        ordering = ['created_at']
+
 
 class Notification(models.Model):
     NOTIFICATION_TYPES = (

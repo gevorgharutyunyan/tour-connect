@@ -1,13 +1,302 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-  <h2>Create a New Tour</h2>
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    {{ tour_date_formset.management_form }}
-    {% for tour_date_form in tour_date_formset %}
-        {{ tour_date_form.as_p }}
-    {% endfor %}
-    <button type="submit">Create Tour</button>
-  </form>
+<div style="max-width: 800px; margin: 2rem auto; padding: 0 1rem;">
+    <div class="card">
+        <h2 style="margin-top: 0; margin-bottom: 2rem; text-align: center;">
+            <i class="fas fa-map-marked-alt"></i> Create a New Tour
+        </h2>
+
+        <form method="post" enctype="multipart/form-data" class="tour-form">
+            {% csrf_token %}
+            
+            <!-- Basic Information -->
+            <div class="form-section">
+                <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
+                <div class="form-group">
+                    <label for="{{ form.title.id_for_label }}">Tour Title</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <div class="error-message">{{ form.title.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.description.id_for_label }}">Description</label>
+                    {{ form.description }}
+                    <small class="help-text">Provide a detailed description of your tour. Include highlights, activities, and what makes it special.</small>
+                    {% if form.description.errors %}
+                        <div class="error-message">{{ form.description.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.price.id_for_label }}">Price ($)</label>
+                        {{ form.price }}
+                        {% if form.price.errors %}
+                            <div class="error-message">{{ form.price.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.duration.id_for_label }}">Duration</label>
+                        {{ form.duration }}
+                        <small class="help-text">e.g., "2 hours", "Full day"</small>
+                        {% if form.duration.errors %}
+                            <div class="error-message">{{ form.duration.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tour Details -->
+            <div class="form-section">
+                <h3><i class="fas fa-list-ul"></i> Tour Details</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.location.id_for_label }}">Location</label>
+                        {{ form.location }}
+                        {% if form.location.errors %}
+                            <div class="error-message">{{ form.location.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.max_participants.id_for_label }}">Max Participants</label>
+                        {{ form.max_participants }}
+                        {% if form.max_participants.errors %}
+                            <div class="error-message">{{ form.max_participants.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.difficulty.id_for_label }}">Difficulty Level</label>
+                        {{ form.difficulty }}
+                        {% if form.difficulty.errors %}
+                            <div class="error-message">{{ form.difficulty.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.languages.id_for_label }}">Languages</label>
+                        {{ form.languages }}
+                        {% if form.languages.errors %}
+                            <div class="error-message">{{ form.languages.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services & Policies -->
+            <div class="form-section">
+                <h3><i class="fas fa-clipboard-list"></i> Services & Policies</h3>
+                <div class="form-group">
+                    <label for="{{ form.included_services.id_for_label }}">What's Included</label>
+                    {{ form.included_services }}
+                    <small class="help-text">List all services, equipment, and items included in the tour price.</small>
+                    {% if form.included_services.errors %}
+                        <div class="error-message">{{ form.included_services.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.excluded_services.id_for_label }}">What's Not Included</label>
+                    {{ form.excluded_services }}
+                    <small class="help-text">List items or services that participants need to bring or pay for separately.</small>
+                    {% if form.excluded_services.errors %}
+                        <div class="error-message">{{ form.excluded_services.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.meeting_point.id_for_label }}">Meeting Point</label>
+                    {{ form.meeting_point }}
+                    <small class="help-text">Provide clear instructions on where to meet for the tour.</small>
+                    {% if form.meeting_point.errors %}
+                        <div class="error-message">{{ form.meeting_point.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.cancellation_policy.id_for_label }}">Cancellation Policy</label>
+                    {{ form.cancellation_policy }}
+                    {% if form.cancellation_policy.errors %}
+                        <div class="error-message">{{ form.cancellation_policy.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tour Dates -->
+            <div class="form-section">
+                <h3><i class="fas fa-calendar-alt"></i> Tour Dates</h3>
+                <div class="tour-dates">
+                    {{ tour_date_formset.management_form }}
+                    {% for tour_date_form in tour_date_formset %}
+                        <div class="tour-date-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Date</label>
+                                    {{ tour_date_form.start_date }}
+                                </div>
+                                <div class="form-group">
+                                    <label>Time</label>
+                                    {{ tour_date_form.start_time }}
+                                </div>
+                                <div class="form-group">
+                                    <label>Available Spots</label>
+                                    {{ tour_date_form.max_spots }}
+                                </div>
+                            </div>
+                            {% if tour_date_form.non_field_errors %}
+                                <div class="error-message">{{ tour_date_form.non_field_errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="addTourDate()">
+                    <i class="fas fa-plus"></i> Add Another Date
+                </button>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Create Tour
+                </button>
+                <a href="{% url 'tours:tour-list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .tour-form .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .tour-form .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .tour-form .form-section h3 {
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+    }
+
+    .tour-form .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .tour-form .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .tour-form label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .tour-form input[type="text"],
+    .tour-form input[type="number"],
+    .tour-form input[type="date"],
+    .tour-form input[type="time"],
+    .tour-form select,
+    .tour-form textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .tour-form select[multiple] {
+        height: 120px;
+    }
+
+    .tour-form textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .tour-form .help-text {
+        display: block;
+        margin-top: 0.25rem;
+        color: #666;
+        font-size: 0.875rem;
+    }
+
+    .tour-form .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .tour-dates {
+        margin-bottom: 1rem;
+    }
+
+    .tour-date-form {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .tour-form .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    function addTourDate() {
+        const tourDates = document.querySelector('.tour-dates');
+        const formCount = document.querySelector('#id_tourdates-TOTAL_FORMS');
+        const newForm = tourDates.querySelector('.tour-date-form').cloneNode(true);
+        
+        // Update form index
+        const index = parseInt(formCount.value);
+        newForm.innerHTML = newForm.innerHTML.replace(/-\d+-/g, `-${index}-`);
+        
+        // Clear form values
+        newForm.querySelectorAll('input').forEach(input => {
+            input.value = '';
+        });
+        
+        tourDates.appendChild(newForm);
+        formCount.value = index + 1;
+    }
+
+    // Initialize date inputs as datepicker if available
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInputs = document.querySelectorAll('input[type="date"]');
+        dateInputs.forEach(input => {
+            if (typeof flatpickr !== 'undefined') {
+                flatpickr(input, {
+                    minDate: 'today',
+                    dateFormat: 'Y-m-d'
+                });
+            }
+        });
+    });
+</script>
 {% endblock %}

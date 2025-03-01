@@ -1,0 +1,17 @@
+{% load tour_tags %}
+
+{% if user.is_authenticated and user.user_type == 'tourist' and not user|has_booked:tour %}
+    {% if is_in_wishlist %}
+        <form method="post" action="{% url 'reviews:remove_from_wishlist' tour.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit">❤️ Remove from Wishlist</button>
+        </form>
+    {% else %}
+        <form method="post" action="{% url 'reviews:add_to_wishlist' tour.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit">🤍 Add to Wishlist</button>
+        </form>
+    {% endif %}
+{% elif not user.is_authenticated %}
+    <a href="{% url 'accounts:login' %}?next={{ request.path }}">🤍 Add to Wishlist</a>
+{% endif %} 

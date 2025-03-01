@@ -20,6 +20,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib import messages
 from .forms import PasswordResetRequestForm, SetPasswordForm
+from apps.reviews.models import Wishlist
 
 User = get_user_model()
 
@@ -114,7 +115,7 @@ def profile_view(request):
             profile.save()
             form.save_m2m()  # Save many-to-many relationships
             messages.success(request, "Profile updated successfully!")
-            return redirect('profile')
+            return redirect('accounts:profile')
 
     else:
         form = form_class(instance=profile)
@@ -123,12 +124,48 @@ def profile_view(request):
     return render(request, template, context)
 
 
-"""
 @login_required
 def tourist_dashboard(request):
-    # Fetch data relevant to tourists (e.g., booked tours)
-    return render(request, 'accounts/tourist_dashboard.html', context={'data': tourist_data})
-"""
+    if request.user.user_type != 'tourist':
+        return redirect('home')
+        
+    # Get recent bookings (excluding completed ones)
+    recent_bookings = Booking.objects.filter(
+        tourist=request.user,
+        status__in=['pending', 'confirmed', 'cancelled']
+    ).select_related(
+        'tour_date__tour',
+        'tour_date__tour__guide'
+    ).order_by('-booking_date')[:5]
+
+    # Get completed bookings
+    completed_bookings = Booking.objects.filter(
+        tourist=request.user,
+        status='completed'
+    ).select_related(
+        'tour_date__tour',
+        'tour_date__tour__guide',
+        'review'
+    ).order_by('-tour_date__start_date')
+
+    # Calculate pending reviews count
+    pending_reviews_count = completed_bookings.filter(review__isnull=True).count()
+
+    # Get wishlist items
+    wishlist_items = Wishlist.objects.filter(
+        tourist=request.user
+    ).select_related(
+        'tour', 'tour__guide', 'tour__location'
+    ).order_by('-added_date')
+
+    context = {
+        'recent_bookings': recent_bookings,
+        'completed_bookings': completed_bookings,
+        'wishlist_items': wishlist_items,
+        'pending_reviews_count': pending_reviews_count,
+    }
+    
+    return render(request, 'accounts/tourist_dashboard.html', context)
 
 
 @login_required
