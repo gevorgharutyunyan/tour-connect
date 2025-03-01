@@ -1,11 +1,104 @@
-<h2>My Bookings</h2>
-<ul>
-    {% for booking in bookings %}
-        <li>
-            <p>Tour: {{ booking.tour_date.tour.title }}</p>
-            <p>Date: {{ booking.tour_date.start_date }}</p>
-            <p>Status: {{ booking.status }}</p>
-            <a href="{% url 'bookings:booking_detail' booking.id %}">View Details</a>
-        </li>
-    {% endfor %}
-</ul>
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 40px auto; padding: 20px;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h2 style="margin: 0; color: #333; font-size: 28px;">My Bookings</h2>
+        <a href="{% url 'tours:tour-list' %}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">
+            Browse More Tours
+        </a>
+    </div>
+
+    {% if bookings %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+            {% for booking in bookings %}
+                <div style="background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
+                    <!-- Booking Header with Status -->
+                    <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; font-size: 18px; color: #333;">{{ booking.tour_date.tour.title }}</h3>
+                        <span style="padding: 6px 12px; border-radius: 20px; font-size: 14px; 
+                            {% if booking.status == 'confirmed' %}
+                                background-color: #4CAF50; color: white;
+                            {% elif booking.status == 'pending' %}
+                                background-color: #FFC107; color: #333;
+                            {% elif booking.status == 'cancelled' %}
+                                background-color: #f44336; color: white;
+                            {% elif booking.status == 'completed' %}
+                                background-color: #2196F3; color: white;
+                            {% endif %}">
+                            {{ booking.status|title }}
+                        </span>
+                    </div>
+
+                    <!-- Booking Details -->
+                    <div style="padding: 20px;">
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                                <div>
+                                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Date</p>
+                                    <p style="margin: 0; color: #333; font-weight: 500;">{{ booking.tour_date.start_date }}</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Time</p>
+                                    <p style="margin: 0; color: #333; font-weight: 500;">{{ booking.tour_date.start_time }}</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Participants</p>
+                                    <p style="margin: 0; color: #333; font-weight: 500;">{{ booking.number_of_participants }}</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Total Price</p>
+                                    <p style="margin: 0; color: #333; font-weight: 500;">${{ booking.total_price }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 15px;">
+                            <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Guide</p>
+                            <p style="margin: 0; color: #333; font-weight: 500;">{{ booking.tour_date.tour.guide.get_full_name }}</p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <a href="{% url 'bookings:booking_detail' booking.id %}" 
+                               style="flex: 1; padding: 10px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 4px; text-align: center;">
+                                View Details
+                            </a>
+                            <a href="{% url 'messaging:create_conversation' booking.tour_date.tour.guide.id %}"
+                               style="flex: 1; padding: 10px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; text-align: center;">
+                                Message Guide
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 40px; background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="font-size: 48px; color: #ccc; margin-bottom: 20px;">📅</div>
+            <h3 style="margin: 0 0 10px 0; color: #333;">No Bookings Yet</h3>
+            <p style="margin: 0 0 20px 0; color: #666;">Start exploring amazing tours and create your first booking!</p>
+            <a href="{% url 'tours:tour-list' %}" 
+               style="display: inline-block; padding: 12px 24px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">
+                Browse Tours
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Hover Effects */
+    a:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        transition: all 0.2s ease;
+    }
+
+    .booking-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: all 0.2s ease;
+    }
+</style>
+{% endblock %}

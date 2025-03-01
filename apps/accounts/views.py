@@ -155,7 +155,7 @@ def tourist_dashboard(request):
     wishlist_items = Wishlist.objects.filter(
         tourist=request.user
     ).select_related(
-        'tour', 'tour__guide', 'tour__location'
+        'tour', 'tour__guide'
     ).order_by('-added_date')
 
     context = {

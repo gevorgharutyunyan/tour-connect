@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- MarkerCluster CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+<style>
+    #map {
+        height: 500px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .search-container {
+        display: flex;
+        gap: 20px;
+    }
+    .filters-panel {
+        flex: 0 0 300px;
+        padding: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .results-panel {
+        flex: 1;
+    }
+    .tour-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        padding: 15px;
+    }
+    .leaflet-popup-content {
+        width: 300px !important;
+    }
+    .popup-image {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+    .save-search {
+        margin-top: 20px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+    .view-toggle {
+        margin-bottom: 20px;
+    }
+    .view-toggle button {
+        padding: 8px 16px;
+        border: 1px solid #dee2e6;
+        background: #fff;
+        cursor: pointer;
+    }
+    .view-toggle button.active {
+        background: #007bff;
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Advanced Tour Search</h1>
+
+    <!-- View Toggle -->
+    <div class="view-toggle btn-group">
+        <button class="btn btn-outline-primary active" onclick="toggleView('map')">Map View</button>
+        <button class="btn btn-outline-primary" onclick="toggleView('list')">List View</button>
+    </div>
+
+    <!-- Map View -->
+    <div id="map-view">
+        <div id="map"></div>
+    </div>
+
+    <div class="search-container">
+        <!-- Filters Panel -->
+        <div class="filters-panel">
+            <form id="search-form" method="get">
+                {{ filter_form.as_p }}
+                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+            </form>
+
+            {% if user.is_authenticated %}
+            <div class="save-search">
+                <h5>Save Search</h5>
+                <input type="text" id="search-name" class="form-control mb-2" placeholder="Name this search">
+                <button onclick="saveSearch()" class="btn btn-secondary w-100">Save Current Filters</button>
+            </div>
+
+            <div class="saved-searches mt-3">
+                <h5>Saved Searches</h5>
+                <div id="saved-searches-list"></div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Results Panel -->
+        <div class="results-panel" id="list-view" style="display: none;">
+            {% if tours %}
+                {% for tour in tours %}
+                <div class="tour-card" data-lat="{{ tour.latitude }}" data-lng="{{ tour.longitude }}">
+                    <div class="row">
+                        <div class="col-md-4">
+                            {% if tour.images.exists %}
+                                <img src="{{ tour.images.first.image.url }}" class="img-fluid rounded" alt="{{ tour.title }}">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <h5>{{ tour.title }}</h5>
+                            <p class="text-muted">{{ tour.location }}</p>
+                            <p>{{ tour.description|truncatewords:30 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Price:</strong> ${{ tour.price }}
+                                    <br>
+                                    <strong>Duration:</strong> {{ tour.duration }}
+                                </div>
+                                <a href="{% url 'tours:tour-detail' tour.pk %}" class="btn btn-primary">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if query_params %}&{{ query_params }}{% endif %}">First</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query_params %}&{{ query_params }}{% endif %}">Previous</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if query_params %}&{{ query_params }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query_params %}&{{ query_params }}{% endif %}">Next</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query_params %}&{{ query_params }}{% endif %}">Last</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">No tours found matching your criteria.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- MarkerCluster JS -->
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<script>
+let map;
+let markers;
+let currentView = 'map';
+
+function initMap() {
+    // Initialize the map
+    map = L.map('map').setView([0, 0], 2);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Initialize marker cluster group
+    markers = L.markerClusterGroup();
+    
+    // Add markers for each tour
+    document.querySelectorAll('.tour-card').forEach(card => {
+        const lat = parseFloat(card.dataset.lat);
+        const lng = parseFloat(card.dataset.lng);
+        
+        if (lat && lng) {
+            const marker = L.marker([lat, lng]);
+            
+            // Create popup content
+            const popupContent = `
+                <div class="tour-popup">
+                    ${card.querySelector('img') ? 
+                        `<img src="${card.querySelector('img').src}" class="popup-image">` : ''}
+                    <h6>${card.querySelector('h5').textContent}</h6>
+                    <p>${card.querySelector('.text-muted').textContent}</p>
+                    <p><strong>Price:</strong> ${card.querySelector('strong').nextSibling.textContent}</p>
+                    <a href="${card.querySelector('.btn').href}" class="btn btn-primary btn-sm">View Details</a>
+                </div>
+            `;
+            
+            marker.bindPopup(popupContent);
+            markers.addLayer(marker);
+        }
+    });
+    
+    map.addLayer(markers);
+    
+    // Update bounds fields when map moves
+    map.on('moveend', function() {
+        const bounds = map.getBounds();
+        document.getElementById('id_bounds_north').value = bounds.getNorth();
+        document.getElementById('id_bounds_south').value = bounds.getSouth();
+        document.getElementById('id_bounds_east').value = bounds.getEast();
+        document.getElementById('id_bounds_west').value = bounds.getWest();
+    });
+}
+
+function toggleView(view) {
+    const mapView = document.getElementById('map-view');
+    const listView = document.getElementById('list-view');
+    const mapButton = document.querySelector('button[onclick="toggleView(\'map\')"]');
+    const listButton = document.querySelector('button[onclick="toggleView(\'list\')"]');
+    
+    if (view === 'map') {
+        mapView.style.display = 'block';
+        listView.style.display = 'none';
+        mapButton.classList.add('active');
+        listButton.classList.remove('active');
+        if (map) map.invalidateSize();
+    } else {
+        mapView.style.display = 'none';
+        listView.style.display = 'block';
+        mapButton.classList.remove('active');
+        listButton.classList.add('active');
+    }
+    
+    currentView = view;
+}
+
+function saveSearch() {
+    const name = document.getElementById('search-name').value;
+    const formData = new FormData(document.getElementById('search-form'));
+    formData.append('name', name);
+    
+    fetch('{% url "tours:save-filters" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadSavedSearches();
+            document.getElementById('search-name').value = '';
+        }
+    });
+}
+
+function loadSavedSearches() {
+    fetch('{% url "tours:saved-filters" %}')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('saved-searches-list');
+            container.innerHTML = '';
+            
+            data.filters.forEach(filter => {
+                const div = document.createElement('div');
+                div.className = 'saved-search-item d-flex justify-content-between align-items-center mb-2';
+                div.innerHTML = `
+                    <a href="#" onclick="applySavedSearch(${JSON.stringify(filter.filters).replace(/"/g, '&quot;')})">
+                        ${filter.name}
+                    </a>
+                    <button onclick="deleteSavedSearch(${filter.id})" class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        });
+}
+
+function applySavedSearch(filters) {
+    const form = document.getElementById('search-form');
+    Object.entries(filters).forEach(([key, value]) => {
+        const input = form.querySelector(`[name=${key}]`);
+        if (input) input.value = value;
+    });
+    form.submit();
+}
+
+function deleteSavedSearch(id) {
+    fetch(`{% url "tours:delete-saved-filter" 0 %}`.replace('0', id), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadSavedSearches();
+        }
+    });
+}
+
+// Initialize map when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+    if (document.getElementById('saved-searches-list')) {
+        loadSavedSearches();
+    }
+});
+</script>
+{% endblock %} 

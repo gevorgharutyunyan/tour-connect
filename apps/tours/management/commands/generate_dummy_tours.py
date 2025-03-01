@@ -9,101 +9,122 @@ from django.utils import timezone
 User = get_user_model()
 
 class Command(BaseCommand):
-    help = 'Generate dummy tour data'
-
-    def add_arguments(self, parser):
-        parser.add_argument('--tours', type=int, default=50, help='Number of tours to generate')
+    help = 'Generate dummy tours for testing'
 
     def handle(self, *args, **options):
-        # Sample data for generation
-        tour_titles = [
-            "Historical City Walk", "Mountain Adventure Trek", "Culinary Food Tour",
-            "Wine Tasting Experience", "Beach Paradise Tour", "Cultural Heritage Walk",
-            "Wildlife Safari Adventure", "Photography Tour", "Local Markets Tour",
-            "Ancient Ruins Expedition", "Street Art Discovery", "Sunset Sailing Trip",
-            "Forest Hiking Tour", "Urban Legends Walk", "Traditional Crafts Tour",
-            "Island Hopping Adventure", "Desert Safari Experience", "River Cruise Journey",
-            "Bike City Tour", "Ghost Stories Walk", "Farm to Table Experience",
-            "Architecture Discovery", "Village Life Tour", "Cave Exploration",
-            "Waterfall Adventure", "Local Brewery Tour", "Spiritual Temple Tour",
-            "Adventure Sports Day", "Fishing Village Visit", "Mountain Biking Trail"
-        ]
-
-        locations = [
-            ("Paris", "FR"), ("Tokyo", "JP"), ("New York", "US"), ("Rome", "IT"),
-            ("Barcelona", "ES"), ("Sydney", "AU"), ("London", "GB"), ("Berlin", "DE"),
-            ("Amsterdam", "NL"), ("Singapore", "SG"), ("Dubai", "AE"), ("Cairo", "EG"),
-            ("Rio de Janeiro", "BR"), ("Cape Town", "ZA"), ("Mumbai", "IN")
-        ]
-
-        languages = ["English", "Spanish", "French", "German", "Italian", "Japanese", 
-                    "Chinese", "Russian", "Arabic", "Portuguese"]
-
-        difficulties = ["easy", "moderate", "challenging"]
+        # Delete existing tours
+        Tour.objects.all().delete()
 
         # Create languages if they don't exist
+        language_data = [
+            ('English', 'en'),
+            ('Spanish', 'es'),
+            ('French', 'fr'),
+            ('German', 'de'),
+            ('Italian', 'it'),
+            ('Japanese', 'ja'),
+            ('Chinese', 'zh'),
+            ('Russian', 'ru'),
+        ]
+
         created_languages = []
-        for lang in languages:
-            language, _ = Language.objects.get_or_create(name=lang)
+        for name, code in language_data:
+            language, created = Language.objects.get_or_create(
+                name=name,
+                defaults={'code': code}
+            )
             created_languages.append(language)
 
-        # Create locations if they don't exist
-        created_locations = []
-        for loc_name, country_code in locations:
-            location, _ = Location.objects.get_or_create(
-                name=loc_name,
-                defaults={'country': country_code}
-            )
-            created_locations.append(location)
-
-        # Get or create guide users
-        guide_usernames = ["guide1", "guide2", "guide3", "guide4", "guide5"]
-        guides = []
-        for username in guide_usernames:
-            guide, created = User.objects.get_or_create(
+        # Create guide users if they don't exist
+        guide_names = ['John Smith', 'Maria Garcia', 'Hans Weber', 'Sophie Martin']
+        created_guides = []
+        
+        for name in guide_names:
+            username = name.lower().replace(' ', '_')
+            email = f"{username}@example.com"
+            
+            user, created = User.objects.get_or_create(
                 username=username,
                 defaults={
-                    'email': f'{username}@example.com',
+                    'email': email,
+                    'first_name': name.split()[0],
+                    'last_name': name.split()[1],
                     'user_type': 'guide'
                 }
             )
+            
             if created:
-                guide.set_password('password123')
-                guide.save()
-            guides.append(guide)
+                user.set_password('password123')
+                user.save()
+            
+            created_guides.append(user)
 
-        # Generate tours
-        num_tours = options['tours']
-        for i in range(num_tours):
-            # Create tour
+        # Tour titles
+        tour_titles = [
+            "Historical City Walk",
+            "Food and Wine Tour",
+            "Street Art Discovery",
+            "Local Markets Tour",
+            "Architecture Photography Tour",
+            "Hidden Gems Walking Tour",
+            "Cultural Heritage Experience",
+            "Urban Legends Tour",
+            "Sunset City Views",
+            "Traditional Crafts Workshop"
+        ]
+
+        # Locations
+        locations = [
+            ('Paris', 'France'),
+            ('Rome', 'Italy'),
+            ('Barcelona', 'Spain'),
+            ('Berlin', 'Germany'),
+            ('Amsterdam', 'Netherlands'),
+            ('Prague', 'Czech Republic'),
+            ('Vienna', 'Austria'),
+            ('London', 'UK')
+        ]
+
+        # Create tours
+        for _ in range(20):
+            location = random.choice(locations)
+            duration_choices = ['1-3', '4-6', '7-12', 'full-day', 'multi-day']
+            difficulty_choices = ['easy', 'moderate', 'challenging']
+            
             tour = Tour.objects.create(
-                guide=random.choice(guides),
-                title=f"{random.choice(tour_titles)} #{i+1}",
-                description=f"Experience this amazing tour with unique features and unforgettable moments. Tour number {i+1}",
-                location=random.choice(created_locations),
-                duration=timedelta(hours=random.randint(2, 8)),
-                difficulty=random.choice(difficulties),
-                max_participants=random.randint(5, 20),
-                price=random.randint(50, 500),
+                title=random.choice(tour_titles),
+                description=f"Experience the beauty and culture of {location[0]}",
+                guide=random.choice(created_guides),
+                duration=random.choice(duration_choices),
+                difficulty=random.choice(difficulty_choices),
+                price=random.randint(30, 200),
+                max_participants=random.randint(5, 15),
+                location=f"{location[0]}, {location[1]}",
+                latitude=random.uniform(35.0, 60.0),
+                longitude=random.uniform(-10.0, 30.0),
                 included_services="Guide service, Equipment rental, Refreshments",
                 excluded_services="Transportation to meeting point, Personal expenses",
-                meeting_point=f"Central location in {random.choice(created_locations).name}",
-                cancellation_policy="Free cancellation up to 24 hours before the tour",
-                is_active=True
+                meeting_point=f"Central location in {location[0]}",
+                cancellation_policy="Free cancellation up to 24 hours before the tour"
             )
 
-            # Add random languages (2-4 languages per tour)
-            tour.languages.set(random.sample(created_languages, random.randint(2, 4)))
+            # Add 2-4 random languages to the tour
+            selected_languages = random.sample(created_languages, random.randint(2, 4))
+            for lang in selected_languages:
+                tour.languages.add(lang)
 
-            # Create tour dates (3-5 dates per tour)
+            # Create 3-5 future tour dates for each tour
             for _ in range(random.randint(3, 5)):
                 future_date = timezone.now() + timedelta(days=random.randint(1, 60))
+                hour = random.randint(9, 17)
+                minute = random.choice([0, 15, 30, 45])
+                
                 TourDate.objects.create(
                     tour=tour,
                     start_date=future_date.date(),
-                    start_time=f"{random.randint(8, 16):02d}:00",
-                    available_spots=random.randint(1, tour.max_participants),
-                    is_available=True
+                    start_time=future_date.time().replace(hour=hour, minute=minute),
+                    max_spots=tour.max_participants,
+                    booked_spots=0
                 )
 
-        self.stdout.write(self.style.SUCCESS(f'Successfully created {num_tours} tours')) 
+        self.stdout.write(self.style.SUCCESS('Successfully generated dummy tours')) 

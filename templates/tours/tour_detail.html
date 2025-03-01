@@ -102,20 +102,23 @@
                     <h3>Available Dates</h3>
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         {% for date in tour.dates.all %}
-                            {% if date.is_available and date.available_spots > 0 %}
-                                <div style="padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-                                    <p style="margin: 0;"><strong>{{ date.start_date }}</strong></p>
-                                    <p style="margin: 5px 0;">Time: {{ date.start_time }}</p>
-                                    <p style="margin: 0;">Available spots: {{ date.available_spots }}</p>
-                                    {% if user.is_authenticated and user.user_type == 'tourist' %}
-                                        <a href="{% url 'bookings:create_booking' date.id %}" style="display: inline-block; margin-top: 10px; padding: 8px 16px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">
-                                            Book Now
-                                        </a>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
+                            <div style="padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                                <p style="margin: 0;"><strong>{{ date.start_date }}</strong></p>
+                                <p style="margin: 5px 0;">Time: {{ date.start_time }}</p>
+                                <p style="margin: 0;">Available spots: {{ date.available_spots }}</p>
+                                <p style="margin: 0;">Is Available: {{ date.is_available }}</p>
+                                {% if user.is_authenticated and user.user_type == 'tourist' %}
+                                    <a href="{% url 'bookings:create_booking' date.id %}" style="display: inline-block; margin-top: 10px; padding: 8px 16px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">
+                                        Book Now
+                                    </a>
+                                {% endif %}
+                            </div>
                         {% endfor %}
                     </div>
+                </div>
+            {% else %}
+                <div style="background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <p>No dates available for this tour.</p>
                 </div>
             {% endif %}
         </div>

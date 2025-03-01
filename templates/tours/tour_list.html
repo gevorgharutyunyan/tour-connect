@@ -1,6 +1,35 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- MarkerCluster CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+<style>
+    #map {
+        height: 500px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .view-toggle {
+        margin-bottom: 20px;
+    }
+    .view-toggle button {
+        padding: 8px 16px;
+        border: 1px solid #dee2e6;
+        background: #fff;
+        cursor: pointer;
+    }
+    .view-toggle button.active {
+        background: #007bff;
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Tours Navigation -->
 <div style="background-color: #f8f9fa; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
@@ -41,16 +70,11 @@
     <div style="width: 300px; padding: 20px; background-color: #f5f5f5; border-radius: 4px;">
         <h3>Filter Tours</h3>
         <form method="get" id="filter-form">
-            <!-- Preserve search and date filters if they exist -->
-            {% if request.GET.q %}
-                <input type="hidden" name="q" value="{{ request.GET.q }}">
-            {% endif %}
-            {% if request.GET.start_date %}
-                <input type="hidden" name="start_date" value="{{ request.GET.start_date }}">
-            {% endif %}
-            {% if request.GET.end_date %}
-                <input type="hidden" name="end_date" value="{{ request.GET.end_date }}">
-            {% endif %}
+            <!-- Search query -->
+            <div style="margin-bottom: 15px;">
+                <label for="q">Search</label>
+                <input type="text" name="q" id="q" value="{{ request.GET.q }}" class="form-control">
+            </div>
 
             <!-- Price Range -->
             <div style="margin-bottom: 15px;">
@@ -67,25 +91,29 @@
                 </div>
             </div>
 
-            <!-- Participants -->
+            <!-- Duration -->
             <div style="margin-bottom: 15px;">
-                <h4>Group Size</h4>
-                <div style="display: flex; gap: 10px;">
-                    <div>
-                        <label for="{{ filter_form.min_participants.id_for_label }}">Min</label>
-                        {{ filter_form.min_participants }}
-                    </div>
-                    <div>
-                        <label for="{{ filter_form.max_participants.id_for_label }}">Max</label>
-                        {{ filter_form.max_participants }}
-                    </div>
-                </div>
+                <h4>Duration</h4>
+                {{ filter_form.duration }}
             </div>
 
             <!-- Difficulty -->
             <div style="margin-bottom: 15px;">
                 <h4>Difficulty Level</h4>
                 {{ filter_form.difficulty }}
+            </div>
+
+            <!-- Date Range -->
+            <div style="margin-bottom: 15px;">
+                <h4>Date Range</h4>
+                <div>
+                    <label for="{{ filter_form.start_date.id_for_label }}">Start Date</label>
+                    {{ filter_form.start_date }}
+                </div>
+                <div>
+                    <label for="{{ filter_form.end_date.id_for_label }}">End Date</label>
+                    {{ filter_form.end_date }}
+                </div>
             </div>
 
             <!-- Languages -->
@@ -116,50 +144,51 @@
 
     <!-- Tour List -->
     <div style="flex-grow: 1;">
-        <h2>Available Tours</h2>
-        
-        <!-- Search Form -->
-        <form method="get" style="margin-bottom: 20px;">
-            <div style="display: flex; gap: 10px;">
-                <input type="text" name="q" placeholder="Search tours..." value="{{ request.GET.q }}" style="flex-grow: 1; padding: 8px;">
-                <input type="date" name="start_date" value="{{ request.GET.start_date }}" style="padding: 8px;">
-                <input type="date" name="end_date" value="{{ request.GET.end_date }}" style="padding: 8px;">
-                <button type="submit" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px;">Search</button>
-            </div>
-        </form>
-
         {% if tours %}
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
                 {% for tour in tours %}
-                    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 4px;">
-                        {% if tour.images.first %}
-                            <img src="{{ tour.images.first.image.url }}" alt="{{ tour.title }}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 4px;">
-                        {% endif %}
-                        <h3>{{ tour.title }}</h3>
-                        <p><strong>Guide:</strong> {{ tour.guide.username }}</p>
-                        <p><strong>Price:</strong> ${{ tour.price }}</p>
-                        <p><strong>Location:</strong> {{ tour.location }}</p>
-                        <p><strong>Duration:</strong> {{ tour.duration }}</p>
-                        <p><strong>Difficulty:</strong> {{ tour.get_difficulty_display }}</p>
-                        <p><strong>Languages:</strong> {{ tour.languages.all|join:", " }}</p>
-                        
-                        {% if tour.dates.all %}
-                            <div style="margin-top: 10px;">
-                                <strong>Available Dates:</strong>
-                                <ul style="margin-top: 5px;">
-                                    {% for date in tour.dates.all|slice:":3" %}
-                                        {% if date.is_available and date.available_spots > 0 %}
-                                            <li>{{ date.start_date }} ({{ date.available_spots }} spots)</li>
-                                        {% endif %}
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
+                    <div class="tour-card">
+                        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 4px;">
+                            {% if tour.images.first %}
+                                <img src="{{ tour.images.first.image.url }}" alt="{{ tour.title }}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 4px;">
+                            {% endif %}
+                            <h3>{{ tour.title }}</h3>
+                            <p><strong>Guide:</strong> {{ tour.guide.username }}</p>
+                            <p><strong>Price:</strong> ${{ tour.price }}</p>
+                            <p><strong>Location:</strong> {{ tour.location }}</p>
+                            <p><strong>Duration:</strong> {{ tour.get_duration_display }}</p>
+                            <p><strong>Difficulty:</strong> {{ tour.get_difficulty_display }}</p>
+                            <p><strong>Languages:</strong> {{ tour.languages.all|join:", " }}</p>
+                            
+                            {% if tour.dates.all %}
+                                <div style="margin-top: 10px;">
+                                    <strong>Available Dates:</strong>
+                                    <ul style="margin-top: 5px;">
+                                        {% for date in tour.dates.all|slice:":3" %}
+                                            {% if date.available_spots > 0 %}
+                                                <li>{{ date.start_date }} ({{ date.available_spots }} spots)</li>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
 
-                        <div style="margin-top: 15px;">
-                            <a href="{% url 'tours:tour-detail' tour.id %}" style="display: inline-block; padding: 8px 16px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 4px;">
-                                View Details
-                            </a>
+                            <div style="margin-top: 15px;">
+                                <a href="{% url 'tours:tour-detail' tour.id %}" style="display: inline-block; padding: 8px 16px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 4px;">
+                                    View Details
+                                </a>
+                                {% if user.is_authenticated and user.user_type == 'tourist' %}
+                                    {% if tour.is_available %}
+                                        <span style="display: inline-block; padding: 8px 16px; background-color: #4CAF50; color: white; border-radius: 4px; margin-left: 10px;">
+                                            Available
+                                        </span>
+                                    {% else %}
+                                        <span style="display: inline-block; padding: 8px 16px; background-color: #f44336; color: white; border-radius: 4px; margin-left: 10px;">
+                                            Not Available
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 {% endfor %}
@@ -169,11 +198,106 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- MarkerCluster JS -->
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 
 <script>
-    // Auto-submit form when sort option changes
-    document.getElementById('{{ filter_form.sort_by.id_for_label }}').addEventListener('change', function() {
-        document.getElementById('filter-form').submit();
+let map;
+let markers;
+let currentView = 'map';
+
+function initMap() {
+    // Initialize the map
+    map = L.map('map').setView([0, 0], 2);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Initialize marker cluster group
+    markers = L.markerClusterGroup();
+    
+    // Add markers for each tour
+    document.querySelectorAll('.tour-card').forEach(card => {
+        const lat = parseFloat(card.dataset.lat);
+        const lng = parseFloat(card.dataset.lng);
+        
+        if (lat && lng) {
+            const marker = L.marker([lat, lng]);
+            
+            // Create popup content
+            const popupContent = `
+                <div class="tour-popup">
+                    ${card.querySelector('img') ? 
+                        `<img src="${card.querySelector('img').src}" class="popup-image" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; margin-bottom: 10px;">` : ''}
+                    <h6>${card.querySelector('h3').textContent}</h6>
+                    <p>${card.querySelector('p:nth-child(4)').textContent}</p>
+                    <p>${card.querySelector('p:nth-child(3)').textContent}</p>
+                    <a href="${card.querySelector('a').href}" class="btn btn-primary btn-sm">View Details</a>
+                </div>
+            `;
+            
+            marker.bindPopup(popupContent);
+            markers.addLayer(marker);
+        }
     });
+    
+    map.addLayer(markers);
+    
+    // Update bounds fields when map moves
+    map.on('moveend', function() {
+        const bounds = map.getBounds();
+        const boundsFields = ['bounds_north', 'bounds_south', 'bounds_east', 'bounds_west'];
+        boundsFields.forEach(field => {
+            const input = document.querySelector(`input[name="${field}"]`);
+            if (input) {
+                input.value = bounds[field.replace('bounds_', 'get')]()/1;
+            }
+        });
+    });
+
+    // If there are markers, fit the map to show all of them
+    if (markers.getLayers().length > 0) {
+        map.fitBounds(markers.getBounds());
+    }
+}
+
+function toggleView(view) {
+    const mapView = document.getElementById('map-view');
+    const listView = document.getElementById('list-view');
+    const mapButton = document.querySelector('button[onclick="toggleView(\'map\')"]');
+    const listButton = document.querySelector('button[onclick="toggleView(\'list\')"]');
+    
+    if (view === 'map') {
+        mapView.style.display = 'block';
+        listView.style.display = 'none';
+        mapButton.classList.add('active');
+        listButton.classList.remove('active');
+        if (map) map.invalidateSize();
+    } else {
+        mapView.style.display = 'none';
+        listView.style.display = 'block';
+        mapButton.classList.remove('active');
+        listButton.classList.add('active');
+    }
+    
+    currentView = view;
+}
+
+// Initialize map when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+});
+
+// Auto-submit form when sort option changes
+document.getElementById('{{ filter_form.sort_by.id_for_label }}').addEventListener('change', function() {
+    document.getElementById('filter-form').submit();
+});
 </script>
 {% endblock %}

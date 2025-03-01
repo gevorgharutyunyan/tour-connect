@@ -41,9 +41,6 @@
         <a href="{% url 'accounts:profile' %}" class="btn btn-primary">
             <i class="fas fa-user-edit"></i> Edit Profile
         </a>
-        <a href="{% url 'tours:create-tour' %}" class="btn btn-primary">
-            <i class="fas fa-plus-circle"></i> Create Tour
-        </a>
         <a href="{% url 'bookings:booking_requests' %}" class="btn btn-primary">
             <i class="fas fa-calendar-alt"></i> Booking Requests
         </a>
@@ -57,9 +54,6 @@
 <div class="card" style="margin-bottom: 2rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h2 style="margin: 0;">Your Tours</h2>
-        <a href="{% url 'tours:create-tour' %}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> New Tour
-        </a>
     </div>
 
     {% if tours %}
@@ -78,10 +72,10 @@
                             <a href="{% url 'tours:tour-update' tour.pk %}" class="btn btn-primary" style="flex: 1;">
                                 <i class="fas fa-edit"></i> Edit
                             </a>
-                            <a href="{% url 'tours:tourdate-add' tour.id %}" class="btn btn-secondary" style="flex: 1;">
+                            <a href="{% url 'tours:add-date' tour.id %}" class="btn btn-secondary" style="flex: 1;">
                                 <i class="fas fa-calendar-plus"></i> Add Date
                             </a>
-                            <a href="{% url 'tours:tourimage-add' tour.id %}" class="btn btn-secondary" style="flex: 1;">
+                            <a href="{% url 'tours:add-image' tour.id %}" class="btn btn-secondary" style="flex: 1;">
                                 <i class="fas fa-image"></i> Add Image
                             </a>
                             <a href="{% url 'tours:tour-delete' tour.pk %}" class="btn btn-danger" style="flex: 1;">

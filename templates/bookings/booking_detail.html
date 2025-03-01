@@ -1,10 +1,134 @@
-<h2>Booking Details</h2>
-<p>Tourist: {{ booking.tourist }}</p>
-<p>Tour Date: {{ booking.tour_date }}</p>
-<p>Number of Participants: {{ booking.number_of_participants }}</p>
-<p>Total Price: {{ booking.total_price }}</p>
-<p>Booking Date: {{ booking.booking_date }}</p>
-<p>Status: {{ booking.status }}</p>
-{% if booking.status == 'completed' %}
-  <a href="{% url 'reviews:create_review' booking.id %}">Add Review</a>
-{% endif %}
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 40px auto; padding: 20px;">
+    <!-- Header with Status -->
+    <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #333; font-size: 28px;">Booking Details</h2>
+            <span style="padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500;
+                {% if booking.status == 'confirmed' %}
+                    background-color: #4CAF50; color: white;
+                {% elif booking.status == 'pending' %}
+                    background-color: #FFC107; color: #333;
+                {% elif booking.status == 'cancelled' %}
+                    background-color: #f44336; color: white;
+                {% elif booking.status == 'completed' %}
+                    background-color: #2196F3; color: white;
+                {% endif %}">
+                {{ booking.status|title }}
+            </span>
+        </div>
+
+        <!-- Tour Information -->
+        <div style="margin-bottom: 30px;">
+            <h3 style="color: #444; margin-bottom: 15px;">Tour Information</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                <div>
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Tour Name</p>
+                    <p style="margin: 0; color: #333; font-weight: 500; font-size: 16px;">{{ booking.tour_date.tour.title }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Location</p>
+                    <p style="margin: 0; color: #333; font-weight: 500; font-size: 16px;">{{ booking.tour_date.tour.location }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Guide</p>
+                    <p style="margin: 0; color: #333; font-weight: 500; font-size: 16px;">{{ booking.tour_date.tour.guide.get_full_name }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Duration</p>
+                    <p style="margin: 0; color: #333; font-weight: 500; font-size: 16px;">{{ booking.tour_date.tour.get_duration_display }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Information -->
+        <div style="margin-bottom: 30px;">
+            <h3 style="color: #444; margin-bottom: 15px;">Booking Information</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                <div>
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Tour Date</p>
+                    <p style="margin: 0; color: #333; font-weight: 500; font-size: 16px;">{{ booking.tour_date.start_date }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Start Time</p>
+                    <p style="margin: 0; color: #333; font-weight: 500; font-size: 16px;">{{ booking.tour_date.start_time }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Number of Participants</p>
+                    <p style="margin: 0; color: #333; font-weight: 500; font-size: 16px;">{{ booking.number_of_participants }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Total Price</p>
+                    <p style="margin: 0; color: #333; font-weight: 500; font-size: 16px;">${{ booking.total_price }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Booking Date</p>
+                    <p style="margin: 0; color: #333; font-weight: 500; font-size: 16px;">{{ booking.booking_date }}</p>
+                </div>
+                {% if booking.special_requests %}
+                <div>
+                    <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">Special Requests</p>
+                    <p style="margin: 0; color: #333; font-weight: 500; font-size: 16px;">{{ booking.special_requests }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Meeting Point -->
+        <div style="margin-bottom: 30px;">
+            <h3 style="color: #444; margin-bottom: 15px;">Meeting Point</h3>
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <p style="margin: 0; color: #333;">{{ booking.tour_date.tour.meeting_point }}</p>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 15px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            <a href="{% url 'bookings:booking_list' %}" 
+               style="padding: 12px 24px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px;">
+                Back to My Bookings
+            </a>
+            
+            <a href="{% url 'messaging:create_conversation' booking.tour_date.tour.guide.id %}"
+               style="padding: 12px 24px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">
+                Message Guide
+            </a>
+
+            {% if booking.status == 'completed' %}
+                <a href="{% url 'reviews:create_review' booking.id %}"
+                   style="padding: 12px 24px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 4px;">
+                    Add Review
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Cancellation Policy -->
+    <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="color: #444; margin-bottom: 15px;">Cancellation Policy</h3>
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+            <p style="margin: 0; color: #333;">{{ booking.tour_date.tour.cancellation_policy }}</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Hover Effects */
+    a:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        transition: all 0.2s ease;
+    }
+
+    /* Status Badge Animation */
+    span {
+        transition: all 0.3s ease;
+    }
+    
+    span:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}

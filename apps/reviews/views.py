@@ -86,6 +86,6 @@ def remove_from_wishlist(request, tour_id):
 
 @login_required
 def view_wishlist(request):
-    wishlist_items = Wishlist.objects.filter(tourist=request.user).select_related('tour', 'tour__guide', 'tour__location')
+    wishlist_items = Wishlist.objects.filter(tourist=request.user).select_related('tour', 'tour__guide')
     return render(request, 'reviews/wishlist.html', {'wishlist_items': wishlist_items})
 

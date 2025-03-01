@@ -6,6 +6,14 @@
     <h1 style="font-size: 3rem; margin-bottom: 1rem;">Discover Amazing Tours</h1>
     <p style="font-size: 1.2rem; margin-bottom: 2rem;">Connect with local guides and explore unique experiences around the world</p>
     
+    {% if user.is_authenticated and user.user_type == 'guide' %}
+        <div style="margin-bottom: 2rem;">
+            <a href="{% url 'tours:create-tour' %}" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                <i class="fas fa-plus-circle"></i> Create Your Tour
+            </a>
+        </div>
+    {% endif %}
+    
     <!-- Search Form -->
     <form method="get" action="{% url 'tours:tour-list' %}" class="search-form" style="max-width: 800px; margin: 0 auto;">
         <div style="display: flex; gap: 1rem; background: white; padding: 1rem; border-radius: 8px; box-shadow: var(--shadow);">
@@ -61,7 +69,7 @@
 
                     <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
                         {% if user.is_authenticated and user.user_type == 'tourist' %}
-                            {% if tour.is_active %}
+                            {% if tour.is_available %}
                                 <a href="{% url 'tours:tour-detail' tour.id %}" class="btn btn-primary" style="flex: 2;">
                                     View Details & Book
                                 </a>

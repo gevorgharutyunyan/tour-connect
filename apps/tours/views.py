@@ -1,13 +1,18 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, ListView, DetailView
-from django.db.models import Q
+from django.db.models import Q, Count, Avg, F, ExpressionWrapper, IntegerField
 from apps.common.models import Language, Location
 from .forms import TourForm, TourDateForm, TourImageForm, TourDateFormSet, TourFilterForm
-from .models import Tour, TourDate, TourImage
+from .models import Tour, TourDate, TourImage, SavedSearch
 from apps.reviews.models import Wishlist
 from django.utils import timezone
+from django.core.paginator import Paginator
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
+from datetime import datetime
 
 
 # ✅ Tour Views
@@ -33,9 +38,13 @@ class TourListView(ListView):
         return context
 
     def get_queryset(self):
-        queryset = Tour.objects.filter(
-            is_active=True,
-            dates__start_date__gte=timezone.now()
+        # Start with all tours
+        queryset = Tour.objects.all()
+        
+        # Filter for tours with future dates and available spots
+        queryset = queryset.filter(
+            dates__start_date__gte=timezone.now().date(),
+            dates__max_spots__gt=F('dates__booked_spots')
         ).distinct()
         
         form = TourFilterForm(self.request.GET)
@@ -46,15 +55,24 @@ class TourListView(ListView):
             queryset = queryset.filter(
                 Q(title__icontains=query) |
                 Q(description__icontains=query) |
-                Q(location__name__icontains=query)
+                Q(location__icontains=query)
             )
 
-        # Date range filter
-        if 'start_date' in self.request.GET and 'end_date' in self.request.GET:
-            start_date = self.request.GET.get('start_date')
-            end_date = self.request.GET.get('end_date')
-            if start_date and end_date:
-                queryset = queryset.filter(dates__start_date__range=[start_date, end_date])
+        # Map bounds filter
+        if all(key in self.request.GET for key in ['bounds_north', 'bounds_south', 'bounds_east', 'bounds_west']):
+            try:
+                north = float(self.request.GET.get('bounds_north'))
+                south = float(self.request.GET.get('bounds_south'))
+                east = float(self.request.GET.get('bounds_east'))
+                west = float(self.request.GET.get('bounds_west'))
+                queryset = queryset.filter(
+                    latitude__lte=north,
+                    latitude__gte=south,
+                    longitude__lte=east,
+                    longitude__gte=west
+                )
+            except (ValueError, TypeError):
+                pass
 
         if form.is_valid():
             # Price range filter
@@ -63,13 +81,44 @@ class TourListView(ListView):
             if form.cleaned_data.get('max_price'):
                 queryset = queryset.filter(price__lte=form.cleaned_data['max_price'])
 
-            # Participants range filter
-            if form.cleaned_data.get('min_participants'):
-                queryset = queryset.filter(max_participants__gte=form.cleaned_data['min_participants'])
-            if form.cleaned_data.get('max_participants'):
-                queryset = queryset.filter(max_participants__lte=form.cleaned_data['max_participants'])
+            # Duration filter
+            duration = form.cleaned_data.get('duration')
+            if duration:
+                queryset = queryset.filter(duration=duration)
 
-        return queryset.select_related('guide', 'location').prefetch_related('images', 'dates')
+            # Difficulty filter
+            if form.cleaned_data.get('difficulty'):
+                queryset = queryset.filter(difficulty=form.cleaned_data['difficulty'])
+
+            # Date range filter
+            if form.cleaned_data.get('start_date'):
+                queryset = queryset.filter(dates__start_date__gte=form.cleaned_data['start_date'])
+            if form.cleaned_data.get('end_date'):
+                queryset = queryset.filter(dates__start_date__lte=form.cleaned_data['end_date'])
+
+            # Group size filter
+            if form.cleaned_data.get('group_size'):
+                queryset = queryset.filter(max_participants__gte=form.cleaned_data['group_size'])
+
+            # Languages filter
+            if form.cleaned_data.get('languages'):
+                queryset = queryset.filter(languages__in=form.cleaned_data['languages'])
+
+            # Sorting
+            sort_by = form.cleaned_data.get('sort_by')
+            if sort_by:
+                if sort_by == 'price_low':
+                    queryset = queryset.order_by('price')
+                elif sort_by == 'price_high':
+                    queryset = queryset.order_by('-price')
+                elif sort_by == 'rating':
+                    queryset = queryset.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')
+                elif sort_by == 'date_newest':
+                    queryset = queryset.order_by('-created_at')
+                elif sort_by == 'date_oldest':
+                    queryset = queryset.order_by('created_at')
+
+        return queryset.select_related('guide').prefetch_related('images', 'dates', 'languages')
 
 
 # DETAIL VIEW: Show single tour details
@@ -94,7 +143,7 @@ class GuideRequiredMixin(UserPassesTestMixin):
         return self.request.user.is_authenticated and self.request.user.user_type == 'guide'
 
 
-class TourCreateView(LoginRequiredMixin, CreateView):
+class TourCreateView(LoginRequiredMixin, GuideRequiredMixin, CreateView):
     model = Tour
     form_class = TourForm
     template_name = 'tours/tour_create.html'
@@ -113,22 +162,29 @@ class TourCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         context = self.get_context_data()
         tour_date_formset = context['tour_date_formset']
+        
         if tour_date_formset.is_valid():
-            location_name = form.cleaned_data['location_name']
-            location_country = form.cleaned_data['location_country']
-            languages = form.cleaned_data['languages']
-            location, created = Location.objects.get_or_create(name=location_name, country=location_country)
-            form.instance.location = location
-            languages_list = [lang.strip() for lang in languages.split(',')]
+            # Set the guide
+            form.instance.guide = self.request.user
+            
+            # Set the location
+            form.instance.location = f"{form.cleaned_data['location_name']}, {form.cleaned_data['location_country'].name}"
+            
+            # Save the tour
+            self.object = form.save()
+            
+            # Handle languages
+            languages_list = [lang.strip() for lang in form.cleaned_data['languages'].split(',')]
             languages = []
             for lang_name in languages_list:
                 lang, created = Language.objects.get_or_create(name=lang_name)
                 languages.append(lang)
-            form.instance.guide = self.request.user
-            self.object = form.save()
             self.object.languages.set(languages)
+            
+            # Save tour dates
             tour_date_formset.instance = self.object
             tour_date_formset.save()
+            
             return super().form_valid(form)
         else:
             return self.render_to_response(self.get_context_data(form=form))
@@ -215,3 +271,137 @@ class TourDateDeleteView(LoginRequiredMixin, GuideRequiredMixin, DeleteView):
 
     def get_success_url(self):
         return reverse_lazy('tours:tour-detail', kwargs={'pk': self.object.tour.id})
+
+
+def advanced_search(request):
+    # Base queryset
+    tours = Tour.objects.all()
+
+    # Search query
+    q = request.GET.get('q')
+    if q:
+        tours = tours.filter(
+            Q(title__icontains=q) |
+            Q(description__icontains=q) |
+            Q(location__icontains=q)
+        )
+
+    # Price range
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    if min_price:
+        tours = tours.filter(price__gte=min_price)
+    if max_price:
+        tours = tours.filter(price__lte=max_price)
+
+    # Duration
+    duration = request.GET.get('duration')
+    if duration:
+        if duration == '1-3':
+            tours = tours.filter(duration__icontains='hour').exclude(duration__regex=r'[4-9]|1[0-9]')
+        elif duration == '4-6':
+            tours = tours.filter(duration__regex=r'[4-6]')
+        elif duration == '7-12':
+            tours = tours.filter(duration__regex=r'[7-9]|1[0-2]')
+        elif duration == 'full-day':
+            tours = tours.filter(duration__icontains='day')
+        elif duration == 'multi-day':
+            tours = tours.filter(duration__icontains='day').exclude(duration__icontains='1 day')
+
+    # Difficulty level
+    difficulty = request.GET.getlist('difficulty')
+    if difficulty:
+        tours = tours.filter(difficulty__in=difficulty)
+
+    # Date range
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    if start_date and end_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        tours = tours.filter(dates__start_date__range=[start_date, end_date])
+
+    # Group size
+    group_size = request.GET.get('group_size')
+    if group_size:
+        tours = tours.filter(max_participants__gte=group_size)
+
+    # Sorting
+    sort = request.GET.get('sort', 'relevance')
+    if sort == 'price_low':
+        tours = tours.order_by('price')
+    elif sort == 'price_high':
+        tours = tours.order_by('-price')
+    elif sort == 'rating':
+        tours = tours.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')
+
+    # Pagination
+    paginator = Paginator(tours.distinct(), 12)  # 12 tours per page
+    page = request.GET.get('page')
+    tours = paginator.get_page(page)
+
+    context = {
+        'tours': tours,
+        'today': timezone.now().date(),
+    }
+
+    return render(request, 'tours/advanced_search.html', context)
+
+@login_required
+def save_search_filters(request):
+    if request.method == 'POST':
+        filters = {
+            'q': request.POST.get('q'),
+            'min_price': request.POST.get('min_price'),
+            'max_price': request.POST.get('max_price'),
+            'duration': request.POST.get('duration'),
+            'difficulty': request.POST.getlist('difficulty'),
+            'start_date': request.POST.get('start_date'),
+            'end_date': request.POST.get('end_date'),
+            'group_size': request.POST.get('group_size'),
+        }
+        
+        # Create a name for the saved search based on the filters
+        name = f"Search from {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+        
+        SavedSearch.objects.create(
+            user=request.user,
+            name=name,
+            filters=filters
+        )
+        
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'success': False})
+
+@login_required
+def get_saved_filters(request):
+    saved_filters = SavedSearch.objects.filter(user=request.user).order_by('-created_at')
+    filters = [{
+        'id': f.id,
+        'name': f.name,
+        'filters': f.filters
+    } for f in saved_filters]
+    
+    return JsonResponse({'filters': filters})
+
+@login_required
+def delete_saved_filter(request, filter_id):
+    if request.method == 'POST':
+        saved_filter = get_object_or_404(SavedSearch, id=filter_id, user=request.user)
+        saved_filter.delete()
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'success': False})
+
+@login_required
+def toggle_favorite(request, tour_id):
+    if request.method == 'POST':
+        tour = get_object_or_404(Tour, id=tour_id)
+        if tour in request.user.favorite_tours.all():
+            request.user.favorite_tours.remove(tour)
+        else:
+            request.user.favorite_tours.add(tour)
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'success': False})

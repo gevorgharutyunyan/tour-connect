@@ -10,7 +10,6 @@ from datetime import timedelta
 def home(request):
     # Get featured tours (most recent tours with upcoming dates)
     featured_tours = Tour.objects.filter(
-        is_active=True,
         dates__start_date__gte=timezone.now()
     ).distinct().order_by('-created_at')[:6]  # Limit to 6 tours
     

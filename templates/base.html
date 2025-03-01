@@ -30,9 +30,6 @@
                             <a href="{% url 'accounts:guide_dashboard' %}" class="{% if 'guide_dashboard' in request.resolver_match.url_name %}active{% endif %}">
                                 <i class="fas fa-columns"></i> Dashboard
                             </a>
-                            <a href="{% url 'tours:create-tour' %}" class="{% if 'create-tour' in request.resolver_match.url_name %}active{% endif %}">
-                                <i class="fas fa-plus-circle"></i> Create Tour
-                            </a>
                         {% elif user.user_type == 'tourist' %}
                             <a href="{% url 'accounts:tourist_dashboard' %}" class="{% if 'tourist_dashboard' in request.resolver_match.url_name %}active{% endif %}">
                                 <i class="fas fa-columns"></i> Dashboard

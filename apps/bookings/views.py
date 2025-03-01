@@ -17,13 +17,26 @@ def create_booking(request, tour_date_id):
         booking_form = BookingForm(request.POST)
         payment_form = PaymentForm(request.POST)
         if booking_form.is_valid() and payment_form.is_valid():
-            if tour.is_active:
+            if tour.is_available:
+                # Validate number of participants against available spots
+                num_participants = booking_form.cleaned_data['number_of_participants']
+                if num_participants > tour_date.available_spots:
+                    messages.error(request, f"Sorry, only {tour_date.available_spots} spots are available.")
+                    return render(request, 'bookings/create_booking.html', {
+                        'booking_form': booking_form,
+                        'payment_form': payment_form,
+                        'tour_date': tour_date
+                    })
+
                 booking = booking_form.save(commit=False)
                 booking.tourist = request.user
                 booking.tour_date = tour_date
-                booking.total_price = tour_date.tour.price * booking.number_of_participants  # Calculate total price
-                print("Tour Date:", booking.tour_date)
+                booking.total_price = tour_date.tour.price * booking.number_of_participants
                 booking.save()
+
+                # Update booked spots
+                tour_date.booked_spots += num_participants
+                tour_date.save()
 
                 payment = payment_form.save(commit=False)
                 payment.booking = booking
@@ -32,11 +45,18 @@ def create_booking(request, tour_date_id):
                 # Create notification for the guide
                 create_booking_notification(booking)
 
-                return redirect('bookings:booking_detail', booking.id)  # Redirect to booking detail page
+                messages.success(request, "Booking created successfully!")
+                return redirect('bookings:booking_detail', booking.id)
+            else:
+                messages.error(request, "Sorry, this tour is no longer available.")
     else:
         booking_form = BookingForm()
         payment_form = PaymentForm()
-    return render(request, 'bookings/create_booking.html', {'booking_form': booking_form, 'payment_form': payment_form, 'tour_date': tour_date})
+    return render(request, 'bookings/create_booking.html', {
+        'booking_form': booking_form,
+        'payment_form': payment_form,
+        'tour_date': tour_date
+    })
 
 @login_required
 def booking_detail(request, booking_id):
