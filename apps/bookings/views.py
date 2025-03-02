@@ -1,137 +1,107 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from.models import Booking, Payment
-from.forms import BookingForm, PaymentForm
-from apps.tours.models import TourDate, Tour
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView
-from django.contrib.auth.decorators import login_required, user_passes_test
-from apps.messaging.utils import create_booking_notification
+from .models import Booking
+from .forms import BookingForm
+from apps.tours.models import TourDate
+from apps.payments.forms import PaymentForm
 from django.contrib import messages
+from django.utils import timezone
 
 @login_required
 def create_booking(request, tour_date_id):
-    tour_date = get_object_or_404(TourDate, pk=tour_date_id)
-    tour = Tour.objects.get(pk=tour_date.tour_id)
+    tour_date = get_object_or_404(TourDate, id=tour_date_id)
+    
     if request.method == 'POST':
         booking_form = BookingForm(request.POST)
         payment_form = PaymentForm(request.POST)
         if booking_form.is_valid() and payment_form.is_valid():
-            if tour.is_available:
-                # Validate number of participants against available spots
-                num_participants = booking_form.cleaned_data['number_of_participants']
-                if num_participants > tour_date.available_spots:
-                    messages.error(request, f"Sorry, only {tour_date.available_spots} spots are available.")
-                    return render(request, 'bookings/create_booking.html', {
-                        'booking_form': booking_form,
-                        'payment_form': payment_form,
-                        'tour_date': tour_date
-                    })
-
-                booking = booking_form.save(commit=False)
-                booking.tourist = request.user
-                booking.tour_date = tour_date
-                booking.total_price = tour_date.tour.price * booking.number_of_participants
-                booking.save()
-
-                # Update booked spots
-                tour_date.booked_spots += num_participants
-                tour_date.save()
-
-                payment = payment_form.save(commit=False)
-                payment.booking = booking
-                payment.save()
-
-                # Create notification for the guide
-                create_booking_notification(booking)
-
-                messages.success(request, "Booking created successfully!")
-                return redirect('bookings:booking_detail', booking.id)
-            else:
-                messages.error(request, "Sorry, this tour is no longer available.")
+            number_of_participants = booking_form.cleaned_data['number_of_participants']
+            
+            # Check if there are enough spots available
+            if tour_date.available_spots < number_of_participants:
+                messages.error(request, 'Not enough spots available for this tour.')
+                return redirect('tours:tour-detail', pk=tour_date.tour.id)
+            
+            # Calculate total price
+            total_price = tour_date.tour.price * number_of_participants
+            
+            # Create booking
+            booking = booking_form.save(commit=False)
+            booking.tourist = request.user
+            booking.tour_date = tour_date
+            booking.total_price = total_price
+            booking.save()
+            
+            # Update available spots
+            tour_date.booked_spots += number_of_participants
+            tour_date.save()
+            
+            # Store payment method in session for payment page
+            request.session['payment_method_id'] = payment_form.cleaned_data['payment_method'].id
+            
+            # Redirect to payment
+            return redirect('payments:payment_page', booking_id=booking.id)
     else:
         booking_form = BookingForm()
         payment_form = PaymentForm()
-    return render(request, 'bookings/create_booking.html', {
+    
+    context = {
+        'tour_date': tour_date,
         'booking_form': booking_form,
         'payment_form': payment_form,
-        'tour_date': tour_date
-    })
+        'min_participants': 1,
+        'max_participants': min(tour_date.available_spots, 10)  # Limit to 10 or available spots
+    }
+    return render(request, 'bookings/create_booking.html', context)
+
+@login_required
+def booking_list(request):
+    if request.user.user_type == 'guide':
+        # For guides, show bookings for their tours
+        bookings = Booking.objects.filter(
+            tour_date__tour__guide=request.user
+        ).select_related('tourist', 'tour_date', 'tour_date__tour').order_by('-created_at')
+    else:
+        # For tourists, show their bookings
+        bookings = Booking.objects.filter(
+            tourist=request.user
+        ).select_related('tour_date', 'tour_date__tour').order_by('-created_at')
+    
+    return render(request, 'bookings/booking_list.html', {'bookings': bookings})
 
 @login_required
 def booking_detail(request, booking_id):
-    booking = get_object_or_404(Booking, pk=booking_id)
-    print(booking.tour_date)
+    if request.user.user_type == 'guide':
+        booking = get_object_or_404(Booking, id=booking_id, tour_date__tour__guide=request.user)
+    else:
+        booking = get_object_or_404(Booking, id=booking_id, tourist=request.user)
+    
     return render(request, 'bookings/booking_detail.html', {'booking': booking})
-
-
-@login_required
-def confirm_booking(request, booking_id):
-    booking = get_object_or_404(Booking, pk=booking_id)
-    booking.status = 'confirmed'
-    booking.save()
-    
-    # Create notification for the tourist
-    create_booking_notification(booking)
-    
-    return redirect('accounts:guide_dashboard')  # Redirect back to the guide dashboard
 
 @login_required
 def cancel_booking(request, booking_id):
-    booking = get_object_or_404(Booking, pk=booking_id)
-    booking.status = 'cancelled'
-    booking.save()
+    # Get the booking
+    if request.user.user_type == 'guide':
+        booking = get_object_or_404(Booking, id=booking_id, tour_date__tour__guide=request.user)
+    else:
+        booking = get_object_or_404(Booking, id=booking_id, tourist=request.user)
     
-    # Create notification for the tourist
-    create_booking_notification(booking)
+    if request.method == 'POST':
+        # Check if the booking can be cancelled
+        if booking.can_be_cancelled():
+            # Update tour date available spots
+            tour_date = booking.tour_date
+            tour_date.booked_spots -= booking.number_of_participants
+            tour_date.save()
+            
+            # Update booking status
+            booking.status = 'cancelled'
+            booking.cancelled_at = timezone.now()
+            booking.save()
+            
+            messages.success(request, 'Booking cancelled successfully.')
+            return redirect('bookings:booking_list')
+        else:
+            messages.error(request, 'This booking cannot be cancelled.')
     
-    return redirect('accounts:guide_dashboard')
-
-class BookingListView(LoginRequiredMixin, ListView):
-    model = Booking
-    template_name = 'bookings/booking_list.html'
-    context_object_name = 'bookings'
-
-    def get_queryset(self):
-        return Booking.objects.filter(tourist=self.request.user)
-
-def is_guide(user):
-    return user.is_authenticated and user.user_type == 'guide'
-
-@login_required
-@user_passes_test(is_guide)
-def booking_requests(request):
-    booking_requests = Booking.objects.filter(
-        tour_date__tour__guide=request.user
-    ).select_related(
-        'tourist',
-        'tour_date__tour'
-    ).order_by('-booking_date')
-
-    return render(request, 'bookings/booking_requests.html', {
-        'booking_requests': booking_requests
-    })
-
-@login_required
-@user_passes_test(is_guide)
-def complete_booking(request, booking_id):
-    booking = get_object_or_404(Booking, pk=booking_id)
-    
-    # Verify that the guide owns this tour
-    if booking.tour_date.tour.guide != request.user:
-        messages.error(request, "You don't have permission to complete this booking.")
-        return redirect('accounts:guide_dashboard')
-    
-    # Only confirmed bookings can be completed
-    if booking.status != 'confirmed':
-        messages.error(request, "Only confirmed bookings can be marked as completed.")
-        return redirect('accounts:guide_dashboard')
-    
-    booking.status = 'completed'
-    booking.save()
-    
-    # Create notification for the tourist
-    create_booking_notification(booking)
-    
-    messages.success(request, f"Tour marked as completed. The tourist can now leave a review.")
-    return redirect('accounts:guide_dashboard')
+    return render(request, 'bookings/cancel_booking.html', {'booking': booking})

@@ -1,6 +1,5 @@
 from django import forms
-from.models import Booking, Payment
-from apps.tours.models import TourDate
+from .models import Booking
 
 class BookingForm(forms.ModelForm):
     """
@@ -14,9 +13,16 @@ class BookingForm(forms.ModelForm):
 
     class Meta:
         model = Booking
-        fields = [ 'number_of_participants', 'special_requests'] #'tour_date', # FIXME think about this again(add for tourist or not)
-
-class PaymentForm(forms.ModelForm):
-    class Meta:
-        model = Payment
-        fields = ['payment_method']  # Add more fields as needed
+        fields = ['number_of_participants', 'special_requests']
+        widgets = {
+            'number_of_participants': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '10'
+            }),
+            'special_requests': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Any special requirements or requests?'
+            })
+        }

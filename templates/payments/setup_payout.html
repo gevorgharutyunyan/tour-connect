@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 40px auto; padding: 20px;">
+    <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h1 style="margin-bottom: 30px;">Setup Payout Account</h1>
+        
+        <!-- Payout Information -->
+        <div style="margin-bottom: 30px;">
+            <h2 style="font-size: 1.5rem; margin-bottom: 15px;">How You'll Get Paid</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Choose how you want to receive your tour earnings. We'll transfer your earnings after each successful tour completion,
+                minus our platform fee (15%) and payment processing fees (2.9%).
+            </p>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px;">Fee Breakdown Example</h3>
+                <div style="display: grid; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                        <span>Tour Price</span>
+                        <span>$100.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 5px 0; color: #dc3545;">
+                        <span>Platform Fee (15%)</span>
+                        <span>-$15.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 5px 0; color: #dc3545;">
+                        <span>Processing Fee (2.9%)</span>
+                        <span>-$2.90</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 5px 0; border-top: 2px solid #dee2e6; font-weight: bold;">
+                        <span>Your Earnings</span>
+                        <span>$82.10</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payout Method Selection -->
+        <form id="payout-form" class="payout-form">
+            <div style="margin-bottom: 30px;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 15px;">Select Payout Method</h2>
+                <div style="display: grid; gap: 15px;">
+                    <!-- Stripe Connect -->
+                    <div class="payout-method" onclick="selectPayoutMethod('stripe')"
+                         style="border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; cursor: pointer;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <input type="radio" name="payout_method" value="stripe" id="stripe"
+                                   {% if payout_account and payout_account.payout_method == 'stripe' %}checked{% endif %}>
+                            <div>
+                                <h3 style="margin: 0;">Stripe</h3>
+                                <p style="color: #666; margin: 5px 0 0 0;">
+                                    Receive payments directly to your bank account via Stripe
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- PayPal -->
+                    <div class="payout-method" onclick="selectPayoutMethod('paypal')"
+                         style="border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; cursor: pointer;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <input type="radio" name="payout_method" value="paypal" id="paypal"
+                                   {% if payout_account and payout_account.payout_method == 'paypal' %}checked{% endif %}>
+                            <div>
+                                <h3 style="margin: 0;">PayPal</h3>
+                                <p style="color: #666; margin: 5px 0 0 0;">
+                                    Get paid through your PayPal account
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bank Transfer -->
+                    <div class="payout-method" onclick="selectPayoutMethod('bank')"
+                         style="border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; cursor: pointer;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <input type="radio" name="payout_method" value="bank" id="bank"
+                                   {% if payout_account and payout_account.payout_method == 'bank' %}checked{% endif %}>
+                            <div>
+                                <h3 style="margin: 0;">Bank Transfer</h3>
+                                <p style="color: #666; margin: 5px 0 0 0;">
+                                    Receive payments directly to your bank account
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Account Details Forms -->
+            <div id="stripe-details" class="account-details" style="display: none;">
+                <h3 style="margin-bottom: 15px;">Stripe Account Details</h3>
+                <p style="margin-bottom: 20px;">
+                    You'll be redirected to Stripe to complete your account setup.
+                </p>
+                <button type="button" onclick="setupStripeAccount()" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt"></i> Setup Stripe Account
+                </button>
+            </div>
+            
+            <div id="paypal-details" class="account-details" style="display: none;">
+                <h3 style="margin-bottom: 15px;">PayPal Account Details</h3>
+                <div style="margin-bottom: 20px;">
+                    <label for="paypal-email" style="display: block; margin-bottom: 5px;">PayPal Email</label>
+                    <input type="email" id="paypal-email" name="paypal_email" 
+                           style="width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px;"
+                           value="{{ payout_account.account_details.email|default:'' }}">
+                </div>
+            </div>
+            
+            <div id="bank-details" class="account-details" style="display: none;">
+                <h3 style="margin-bottom: 15px;">Bank Account Details</h3>
+                <div style="display: grid; gap: 15px;">
+                    <div>
+                        <label for="account-name" style="display: block; margin-bottom: 5px;">Account Holder Name</label>
+                        <input type="text" id="account-name" name="account_name" 
+                               style="width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px;"
+                               value="{{ payout_account.account_details.account_name|default:'' }}">
+                    </div>
+                    <div>
+                        <label for="account-number" style="display: block; margin-bottom: 5px;">Account Number</label>
+                        <input type="text" id="account-number" name="account_number" 
+                               style="width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px;"
+                               value="{{ payout_account.account_details.account_number|default:'' }}">
+                    </div>
+                    <div>
+                        <label for="routing-number" style="display: block; margin-bottom: 5px;">Routing Number</label>
+                        <input type="text" id="routing-number" name="routing_number" 
+                               style="width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px;"
+                               value="{{ payout_account.account_details.routing_number|default:'' }}">
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px;">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    Save Payout Settings
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function selectPayoutMethod(method) {
+        // Hide all account details sections
+        document.querySelectorAll('.account-details').forEach(el => el.style.display = 'none');
+        
+        // Show selected method's details
+        document.getElementById(`${method}-details`).style.display = 'block';
+        
+        // Check the radio button
+        document.getElementById(method).checked = true;
+    }
+    
+    // Show initial selection if exists
+    {% if payout_account %}
+        selectPayoutMethod('{{ payout_account.payout_method }}');
+    {% endif %}
+    
+    // Handle form submission
+    document.getElementById('payout-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const method = document.querySelector('input[name="payout_method"]:checked').value;
+        let accountDetails = {};
+        
+        if (method === 'paypal') {
+            accountDetails = {
+                email: document.getElementById('paypal-email').value
+            };
+        } else if (method === 'bank') {
+            accountDetails = {
+                account_name: document.getElementById('account-name').value,
+                account_number: document.getElementById('account-number').value,
+                routing_number: document.getElementById('routing-number').value
+            };
+        }
+        
+        try {
+            const response = await fetch('{% url "payments:setup_payout_account" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    payout_method: method,
+                    account_details: accountDetails
+                })
+            });
+            
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                throw new Error('Failed to save payout settings');
+            }
+        } catch (error) {
+            alert('Error saving payout settings. Please try again.');
+            console.error('Error:', error);
+        }
+    });
+    
+    async function setupStripeAccount() {
+        try {
+            const response = await fetch('{% url "payments:create_stripe_account" %}');
+            const data = await response.json();
+            
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                throw new Error('No Stripe account URL received');
+            }
+        } catch (error) {
+            alert('Error setting up Stripe account. Please try again.');
+            console.error('Error:', error);
+        }
+    }
+</script>
+{% endblock %} 

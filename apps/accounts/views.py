@@ -84,9 +84,10 @@ class RegistrationView(View):
 
         if form.is_valid():
             user = form.save()
-            login(request, user)
+            # Specify the backend when logging in
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             messages.success(request, f'Welcome! Your {user_type} account has been created successfully.')
-            return redirect('tourist_dashboard' if user_type == 'tourist' else 'guide_dashboard')
+            return redirect('accounts:tourist_dashboard' if user_type == 'tourist' else 'accounts:guide_dashboard')
 
         return render(request, template, {'form': form})
 
@@ -136,7 +137,7 @@ def tourist_dashboard(request):
     ).select_related(
         'tour_date__tour',
         'tour_date__tour__guide'
-    ).order_by('-booking_date')[:5]
+    ).order_by('-created_at')[:5]
 
     # Get completed bookings
     completed_bookings = Booking.objects.filter(

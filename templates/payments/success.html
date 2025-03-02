@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 40px auto; padding: 20px; text-align: center;">
+    <div style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="color: var(--success-color); font-size: 4rem; margin-bottom: 20px;">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        
+        <h1 style="color: var(--success-color); margin-bottom: 20px;">Payment Successful!</h1>
+        <p style="font-size: 1.2rem; color: #666; margin-bottom: 30px;">
+            Thank you for your booking. Your payment has been processed successfully.
+        </p>
+        
+        <!-- Transaction Details -->
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h2 style="margin-bottom: 20px;">Transaction Details</h2>
+            <div style="display: grid; gap: 15px; text-align: left;">
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <span>Transaction ID</span>
+                    <span>{{ transaction.transaction_id }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <span>Tour</span>
+                    <span>{{ transaction.booking.tour_date.tour.title }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <span>Date</span>
+                    <span>{{ transaction.booking.tour_date.start_date }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <span>Amount Paid</span>
+                    <span>${{ transaction.amount }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <span>Status</span>
+                    <span style="color: var(--success-color);">{{ transaction.get_status_display }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Next Steps -->
+        <div style="margin-bottom: 30px;">
+            <h3 style="margin-bottom: 15px;">Next Steps</h3>
+            <div style="display: grid; gap: 15px;">
+                <div>
+                    <i class="fas fa-envelope" style="color: var(--primary-color);"></i>
+                    <p>A confirmation email has been sent to your email address.</p>
+                </div>
+                <div>
+                    <i class="fas fa-calendar-check" style="color: var(--primary-color);"></i>
+                    <p>Your booking is now confirmed. The guide has been notified.</p>
+                </div>
+                <div>
+                    <i class="fas fa-comments" style="color: var(--primary-color);"></i>
+                    <p>You can now message your guide to discuss tour details.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 15px; justify-content: center;">
+            <a href="{% url 'bookings:booking_list' %}" class="btn btn-primary">
+                <i class="fas fa-list"></i> View My Bookings
+            </a>
+            <a href="{% url 'messaging:create_conversation' transaction.booking.tour_date.tour.guide.id %}" class="btn btn-secondary">
+                <i class="fas fa-envelope"></i> Message Guide
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

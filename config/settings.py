@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.bookings',
     'apps.reviews',
     'apps.messaging',
+    'apps.payments',
 ]
 
 MIDDLEWARE = [
@@ -168,3 +169,12 @@ LOGOUT_REDIRECT_URL = 'login'
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Stripe Settings
+STRIPE_PUBLIC_KEY = 'your_stripe_public_key'  # Replace with your actual Stripe public key
+STRIPE_SECRET_KEY = 'your_stripe_secret_key'  # Replace with your actual Stripe secret key
+STRIPE_WEBHOOK_SECRET = 'your_stripe_webhook_secret'  # Replace with your actual Stripe webhook secret
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

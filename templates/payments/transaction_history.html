@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 40px auto; padding: 20px;">
+    <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h1 style="margin-bottom: 30px;">Transaction History</h1>
+        
+        {% if transactions %}
+            <!-- Transaction List -->
+            <div class="transaction-list" style="display: grid; gap: 20px;">
+                {% for transaction in transactions %}
+                    <div class="transaction-card" style="border: 1px solid #dee2e6; border-radius: 8px; padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                            <div>
+                                <h3 style="margin: 0;">{{ transaction.booking.tour_date.tour.title }}</h3>
+                                <p style="color: #666; margin: 5px 0;">
+                                    Transaction ID: {{ transaction.transaction_id }}
+                                </p>
+                            </div>
+                            <span class="status-badge" style="padding: 5px 15px; border-radius: 20px; font-size: 14px;
+                                {% if transaction.status == 'completed' %}
+                                    background-color: var(--success-color); color: white;
+                                {% elif transaction.status == 'pending' %}
+                                    background-color: #ffc107; color: #333;
+                                {% elif transaction.status == 'failed' %}
+                                    background-color: var(--danger-color); color: white;
+                                {% elif transaction.status == 'refunded' %}
+                                    background-color: #6c757d; color: white;
+                                {% endif %}">
+                                {{ transaction.get_status_display }}
+                            </span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div>
+                                <p style="color: #666; margin: 0 0 5px 0;">Date</p>
+                                <p style="margin: 0;">{{ transaction.created_at|date:"M d, Y H:i" }}</p>
+                            </div>
+                            <div>
+                                <p style="color: #666; margin: 0 0 5px 0;">Amount</p>
+                                <p style="margin: 0; font-weight: bold;">${{ transaction.amount }}</p>
+                            </div>
+                            <div>
+                                <p style="color: #666; margin: 0 0 5px 0;">Payment Method</p>
+                                <p style="margin: 0;">{{ transaction.payment_method.name }}</p>
+                            </div>
+                            {% if user.user_type == 'guide' %}
+                                <div>
+                                    <p style="color: #666; margin: 0 0 5px 0;">Platform Fee</p>
+                                    <p style="margin: 0; color: #dc3545;">-${{ transaction.platform_fee_amount }}</p>
+                                </div>
+                                <div>
+                                    <p style="color: #666; margin: 0 0 5px 0;">Processing Fee</p>
+                                    <p style="margin: 0; color: #dc3545;">-${{ transaction.processing_fee_amount }}</p>
+                                </div>
+                                <div>
+                                    <p style="color: #666; margin: 0 0 5px 0;">Your Earnings</p>
+                                    <p style="margin: 0; color: var(--success-color); font-weight: bold;">
+                                        ${{ transaction.guide_payout_amount }}
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if transaction.status == 'completed' and user.user_type == 'tourist' %}
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #dee2e6;">
+                                <a href="{% url 'messaging:create_conversation' transaction.booking.tour_date.tour.guide.id %}"
+                                   class="btn btn-primary">
+                                    <i class="fas fa-envelope"></i> Message Guide
+                                </a>
+                                {% if not transaction.booking.review %}
+                                    <a href="{% url 'reviews:create_review' transaction.booking.id %}"
+                                       class="btn btn-secondary">
+                                        <i class="fas fa-star"></i> Write Review
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        {% if transaction.status == 'refunded' %}
+                            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
+                                <p style="margin: 0; color: #666;">
+                                    <i class="fas fa-info-circle"></i>
+                                    Refund processed on {{ transaction.refunded_at|date:"M d, Y" }}
+                                    {% if transaction.refund_reason %}
+                                        <br>
+                                        Reason: {{ transaction.refund_reason }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-receipt" style="font-size: 3rem; color: #dee2e6; margin-bottom: 20px;"></i>
+                <h3>No Transactions Yet</h3>
+                <p style="color: #666;">Your transaction history will appear here once you make or receive payments.</p>
+                {% if user.user_type == 'tourist' %}
+                    <a href="{% url 'tours:tour-list' %}" class="btn btn-primary">Browse Tours</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 
