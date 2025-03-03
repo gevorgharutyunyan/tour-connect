@@ -217,12 +217,26 @@ class TourImageCreateView(LoginRequiredMixin, GuideRequiredMixin, CreateView):
     form_class = TourImageForm
     template_name = 'tours/tour_image_form.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tour'] = get_object_or_404(Tour, id=self.kwargs['pk'])
+        return context
+
     def form_valid(self, form):
-        form.instance.tour = get_object_or_404(Tour, id=self.kwargs['tour_id'])
-        return super().form_valid(form)
+        tour = get_object_or_404(Tour, id=self.kwargs['pk'])
+        image = form.cleaned_data['image']
+        
+        # Create TourImage object
+        TourImage.objects.create(
+            tour=tour,
+            image=image,
+            is_primary=not tour.images.filter(is_primary=True).exists()
+        )
+        
+        return redirect('tours:tour-detail', pk=tour.id)
 
     def get_success_url(self):
-        return reverse_lazy('tours:tour-detail', kwargs={'pk': self.kwargs['tour_id']})
+        return reverse_lazy('tours:tour-detail', kwargs={'pk': self.kwargs['pk']})
 
 
 class TourImageUpdateView(LoginRequiredMixin, GuideRequiredMixin, UpdateView):

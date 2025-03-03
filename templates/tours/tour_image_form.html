@@ -1,10 +1,222 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .image-upload-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .drop-zone {
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+        cursor: pointer;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+        border-color: #0d6efd;
+        background: #e9ecef;
+    }
+
+    .drop-zone i {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+
+    .preview-container {
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .preview-item {
+        position: relative;
+        display: inline-block;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    .preview-item img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+    }
+
+    .preview-item .remove-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(255,255,255,0.9);
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #dc3545;
+    }
+
+    .validation-message {
+        color: #dc3545;
+        margin-top: 0.5rem;
+        display: none;
+    }
+
+    .form-error {
+        color: #dc3545;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-  <h2>Add Tour Image</h2>
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Add Image</button>
-  </form>
+<div class="image-upload-container">
+    <h2 class="mb-4">Upload Image for {{ tour.title }}</h2>
+    
+    <form method="post" enctype="multipart/form-data" id="imageUploadForm">
+        {% csrf_token %}
+        
+        <div class="drop-zone" id="dropZone">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p class="mb-2">Drag and drop an image here or click to select</p>
+            <p class="text-muted small">Maximum size: 5MB</p>
+            {{ form.image }}
+        </div>
+
+        {% if form.errors %}
+            <div class="form-error">
+                {{ form.image.errors }}
+            </div>
+        {% endif %}
+
+        <div class="validation-message" id="validationMessage"></div>
+        <div class="preview-container" id="previewContainer"></div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                <i class="fas fa-upload"></i> Upload Image
+            </button>
+            <a href="{% url 'tours:tour-detail' tour.id %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.querySelector('input[type="file"]');
+    const previewContainer = document.getElementById('previewContainer');
+    const validationMessage = document.getElementById('validationMessage');
+    const submitBtn = document.getElementById('submitBtn');
+    const maxSize = 5242880; // 5MB in bytes
+
+    // Hide the default file input
+    fileInput.style.display = 'none';
+
+    // Handle drag and drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    dropZone.addEventListener('drop', handleDrop, false);
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFiles);
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function highlight(e) {
+        dropZone.classList.add('dragover');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('dragover');
+    }
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles({ target: { files: files } });
+    }
+
+    function handleFiles(e) {
+        const file = e.target.files[0];
+        validationMessage.style.display = 'none';
+        previewContainer.innerHTML = '';
+        submitBtn.disabled = true;
+
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            showError('Please select an image file');
+            return;
+        }
+
+        if (file.size > maxSize) {
+            showError('Image is too large. Maximum size is 5MB');
+            return;
+        }
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = createPreviewElement(e.target.result);
+            previewContainer.appendChild(preview);
+        }
+        reader.readAsDataURL(file);
+        submitBtn.disabled = false;
+    }
+
+    function createPreviewElement(src) {
+        const div = document.createElement('div');
+        div.className = 'preview-item';
+        div.innerHTML = `
+            <img src="${src}" alt="Preview">
+            <button type="button" class="remove-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        div.querySelector('.remove-btn').addEventListener('click', function() {
+            previewContainer.innerHTML = '';
+            fileInput.value = '';
+            submitBtn.disabled = true;
+        });
+
+        return div;
+    }
+
+    function showError(message) {
+        validationMessage.textContent = message;
+        validationMessage.style.display = 'block';
+        fileInput.value = '';
+    }
+});
+</script>
 {% endblock %}

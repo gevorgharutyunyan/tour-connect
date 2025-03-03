@@ -50,9 +50,21 @@ TourDateFormSet = inlineformset_factory(
 )
 
 class TourImageForm(forms.ModelForm):
+    image = forms.ImageField(
+        required=True,
+        help_text='Maximum size: 5MB'
+    )
+    
     class Meta:
         model = TourImage
-        fields = ['image', 'caption', 'is_primary']
+        fields = ['image']
+        
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image:
+            if image.size > 5242880:  # 5MB in bytes
+                raise forms.ValidationError("Image is too large. Maximum size is 5MB.")
+        return image
 
 class TourFilterForm(forms.Form):
     # Search query
